@@ -8,9 +8,8 @@ class ApiConstants {
   // Both phone and computer must be on the same WiFi network
   // Use 10.0.2.2 for Android Emulator to access the host's localhost
   // static const String baseUrl = 'http://192.168.0.48:3000/api';
-  static const String baseUrl =
-      'http://10.0.2.2:3000/api'; // Uncomment for Android Emulator
-  // static const String baseUrl = 'http://192.168.0.109:3000/api';
+  // static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String baseUrl = 'http://192.168.1.109:3000/api';
   // static const String baseUrl = 'http://192.168.0.38:3000/api';
   // static const String baseUrl = 'http://172.30.1.12:3000/api';
 

@@ -287,7 +287,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           if (index == carState.cars.length) {
             // Load more indicator
             if (carState.hasMore && !carState.isLoading) {
-              ref.read(carListProvider.notifier).loadMore();
+              Future.microtask(
+                () => ref.read(carListProvider.notifier).loadMore(),
+              );
             }
             return carState.isLoading
                 ? const Padding(
