@@ -55,6 +55,12 @@ func main() {
 	}
 	defer database.CloseRedis()
 
+	// Run SQL Migrations (Automated for Railway/Docker)
+	if err := database.RunMigrations(database.DB); err != nil {
+		log.Printf("⚠ Warning: SQL Migrations failed: %v", err)
+		// Don't fatal, as it might be a transient issue or existing schema
+	}
+
 	// Check if tables exist before running auto-migrations
 	// This avoids constraint name conflicts when tables are created via SQL migrations
 	var tableExists bool
@@ -87,6 +93,25 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
+	// CORS middleware - MUST be before other middleware to handle preflight OPTIONS
+	r.Use(func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+		if origin == "" {
+			origin = "*"
+		}
+		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
 	// Rate limiting (exclude Swagger UI and health check)
 	r.Use(func(c *gin.Context) {
 		path := c.Request.URL.Path
@@ -100,21 +125,6 @@ func main() {
 		}
 		// Apply rate limiting for other routes
 		auth.RateLimitMiddleware()(c)
-	})
-
-	// CORS middleware (for development)
-	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
 	})
 
 	// Swagger UI
@@ -161,27 +171,43 @@ func main() {
 		{
 			protected.POST("/logout", authHandler.Logout)
 			protected.GET("/me", authHandler.GetCurrentUser)
+			protected.PUT("/me", authHandler.UpdateProfile)
+			protected.POST("/change-password", authHandler.ChangePassword)
 		}
 	}
 
 	// Initialize listing components
 	listingRepo := listing.NewRepository(database.DB)
-	storageService, err := listing.NewStorageService(cfg.AWSAccessKey, cfg.AWSSecretKey, cfg.AWSRegion, cfg.AWSBucketName)
+
+	// Initialize R2 storage service
+	var storageService listing.StorageService
+	r2Storage, err := listing.NewStorageService(cfg)
 	if err != nil {
-		log.Printf("Failed to initialize storage service: %v", err)
+		log.Printf("⚠ R2 Storage initialization failed: %v", err)
+		log.Println("  Image uploads will not work until R2 is configured correctly")
+		storageService = &listing.NullStorageService{}
+	} else {
+		storageService = r2Storage
 	}
+
 	listingService := listing.NewService(listingRepo, storageService, database.RedisClient)
 	listingHandler := listing.NewHandler(listingService)
 
 	// Listing routes
-	// Listing routes
 	api := r.Group("/api")
 	{
+		// Test route - NO AUTHENTICATION (for testing R2 upload)
+		test := api.Group("/test")
+		{
+			test.POST("/upload", listingHandler.TestImageUpload)
+		}
+
 		cars := api.Group("/cars")
 
 		// Public listing routes
 		cars.GET("", listingHandler.ListListings)
 		cars.GET("/:id", listingHandler.GetListing)
+		cars.POST("/:id/view", listingHandler.IncrementView)
 
 		// Protected listing routes
 		protected := cars.Group("")
@@ -211,6 +237,9 @@ func main() {
 		protectedListings.GET("/my-listings", listingHandler.GetMyListings)
 		protectedListings.GET("/favorites", listingHandler.GetFavorites)
 		protectedListings.POST("/:id/favorite", listingHandler.ToggleFavorite)
+
+		// Generic Upload Endpoint (Protected)
+		api.POST("/upload", auth.AuthMiddleware(cfg), listingHandler.UploadImage)
 	}
 
 	// Start server

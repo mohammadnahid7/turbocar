@@ -105,25 +105,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
               _loginEmailController.text.trim(),
               _loginPasswordController.text,
             );
-        if (mounted) {
-          context.go('/home');
-        }
+        // Navigation handled by ref.listen
       } catch (e) {
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Login Failed'),
-              content: Text(e.toString().replaceAll('Exception: ', '')),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
+        // Error handling handled by ref.listen
       }
     }
   }
@@ -141,6 +125,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               fullName:
                   '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
             );
+
         if (mounted) {
           showDialog(
             context: context,
@@ -161,22 +146,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
             ),
           );
         }
-      } catch (e) {
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Signup Failed'),
-              content: Text(e.toString().replaceAll('Exception: ', '')),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
+      } catch (_) {
+        // Error is handled by ref.listen in build()
       }
     }
   }
@@ -205,8 +176,38 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    // ONLY watch the loading state - this minimizes rebuilds
+    // Navigation and error handling are done via ref.listen (side effects)
+    final isLoading = ref.watch(
+      authProvider.select((state) => state.isLoading),
+    );
     final theme = Theme.of(context);
+
+    // Listen to Auth State for Navigation and Errors (side effects only)
+    // This does NOT cause rebuilds - it only fires callbacks
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      // 1. Handle Navigation ONLY on Successful Authentication
+      if (!next.isLoading && next.isAuthenticated && next.user != null) {
+        // Only navigate if we weren't already authenticated
+        if (previous?.isAuthenticated != true) {
+          context.go('/home');
+        }
+      }
+
+      // 2. Handle Errors - Show SnackBar without navigation
+      if (!next.isLoading &&
+          next.error != null &&
+          (previous?.isLoading == true || previous?.error != next.error)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!.replaceAll('Exception: ', '')),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4), // Give user time to read
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColorDark,
@@ -298,8 +299,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildLoginForm(authState),
-                    SingleChildScrollView(child: _buildSignupForm(authState)),
+                    _buildLoginForm(isLoading),
+                    SingleChildScrollView(child: _buildSignupForm(isLoading)),
                   ],
                 ),
               ),
@@ -350,7 +351,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     );
   }
 
-  Widget _buildLoginForm(AuthState authState) {
+  Widget _buildLoginForm(bool isLoading) {
     return Form(
       key: _loginFormKey,
       child: Column(
@@ -422,7 +423,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             borderRadius: BorderRadius.all(Radius.circular(50)),
             text: StringConstants.login,
             onPressed: _handleLogin,
-            isLoading: authState.isLoading,
+            isLoading: isLoading,
             foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
           ),
           const SizedBox(height: 16),
@@ -432,7 +433,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     );
   }
 
-  Widget _buildSignupForm(AuthState authState) {
+  Widget _buildSignupForm(bool isLoading) {
     return Form(
       key: _signupFormKey,
       child: SingleChildScrollView(
@@ -585,7 +586,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             CustomButton(
               text: StringConstants.signup,
               onPressed: _isSignupFormValid ? _handleSignup : null,
-              isLoading: authState.isLoading,
+              isLoading: isLoading,
             ),
             const SizedBox(height: 16),
             _buildDividerWithText(),

@@ -13,7 +13,7 @@ class UserModel {
   final String name;
   final String email;
   final String? phone;
-  @JsonKey(name: 'date_of_birth')
+  @JsonKey(name: 'dob')
   final DateTime? dateOfBirth;
   final String? gender;
   @JsonKey(name: 'profile_photo_url')

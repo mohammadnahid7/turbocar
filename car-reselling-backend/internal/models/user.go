@@ -14,6 +14,8 @@ type User struct {
 	Phone           string     `gorm:"uniqueIndex;not null" json:"phone"`
 	PasswordHash    string     `gorm:"not null" json:"-"`
 	FullName        string     `gorm:"not null" json:"full_name"`
+	Gender          *string    `json:"gender"`
+	DOB             *time.Time `json:"dob"`
 	ProfilePhotoURL *string    `json:"profile_photo_url"`
 	IsVerified      bool       `gorm:"default:false" json:"is_verified"`
 	IsDealer        bool       `gorm:"default:false" json:"is_dealer"`

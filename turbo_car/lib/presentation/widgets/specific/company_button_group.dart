@@ -5,21 +5,17 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/filter_provider.dart';
+import '../../../data/providers/car_provider.dart';
+import '../../../core/constants/car_brands.dart';
 
 class CompanyButtonGroup extends ConsumerWidget {
   const CompanyButtonGroup({super.key});
 
-  // TODO: Get companies from constants or API
-  static const List<String> companies = [
+  // Use brands from constants plus All and Others
+  static List<String> get companies => [
     'All',
-    'Toyota',
-    'Honda',
-    'BMW',
-    'Mercedes',
-    'Audi',
-    'Ford',
-    'Chevrolet',
-    'Nissan',
+    ...CarBrands.validBrands.take(18), // Show top 18
+    'Others',
   ];
 
   @override
@@ -43,9 +39,18 @@ class CompanyButtonGroup extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 5),
             child: OutlinedButton(
               onPressed: () {
-                ref
-                    .read(filterProvider.notifier)
-                    .updateMake((isAll || isSelected) ? null : company);
+                if (company == 'Others') {
+                  _showAllBrands(context, ref);
+                  return;
+                }
+
+                // Update filter state
+                final newMake = (isAll || isSelected) ? null : company;
+                ref.read(filterProvider.notifier).updateMake(newMake);
+
+                // Apply filters to car list
+                final filters = ref.read(filterProvider).toQueryParams();
+                ref.read(carListProvider.notifier).applyFilters(filters);
               },
               style: OutlinedButton.styleFrom(
                 backgroundColor: isSelected
@@ -69,10 +74,102 @@ class CompanyButtonGroup extends ConsumerWidget {
                   vertical: 1,
                 ),
               ),
-              child: Text(company),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isAll && company != 'Others') ...[
+                    Image.asset(
+                      CarBrands.getLogoPath(company) ?? '',
+                      width: 20,
+                      height: 20,
+                      errorBuilder: (_, __, ___) => const SizedBox(),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(company),
+                ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showAllBrands(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Select Brand',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            Expanded(
+              child: GridView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 1.0,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: CarBrands.validBrands.length,
+                itemBuilder: (context, index) {
+                  final brand = CarBrands.validBrands[index];
+                  return InkWell(
+                    onTap: () {
+                      ref.read(filterProvider.notifier).updateMake(brand);
+                      final filters = ref.read(filterProvider).toQueryParams();
+                      ref.read(carListProvider.notifier).applyFilters(filters);
+                      Navigator.pop(context);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            CarBrands.getLogoPath(brand) ?? '',
+                            width: 40,
+                            height: 40,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.directions_car),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            brand,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

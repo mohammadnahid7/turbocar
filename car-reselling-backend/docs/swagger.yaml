@@ -463,6 +463,52 @@ paths:
       summary: Verify OTP
       tags:
       - auth
+  /api/test/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a test image to Cloudflare R2 (no auth required - for testing only)
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns uploaded image URL
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+              url:
+                type: string
+              filename:
+                type: string
+              size:
+                type: integer
+              test_id:
+                type: string
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Test image upload to R2
+      tags:
+      - test
   /api/cars:
     get:
       consumes:

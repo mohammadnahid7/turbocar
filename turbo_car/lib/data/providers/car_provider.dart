@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/car_model.dart';
 import '../repositories/car_repository.dart';
+import '../../core/services/car_image_service.dart';
 import '../../core/constants/app_constants.dart';
 
 // Car List State
@@ -52,8 +53,10 @@ class CarListState {
 // Car List Notifier
 class CarListNotifier extends StateNotifier<CarListState> {
   final CarRepository _carRepository;
+  final CarImageService _carImageService;
 
-  CarListNotifier(this._carRepository) : super(CarListState());
+  CarListNotifier(this._carRepository, this._carImageService)
+    : super(CarListState());
 
   // Fetch cars with filters - supports caching
   Future<void> fetchCars({
@@ -88,6 +91,10 @@ class CarListNotifier extends StateNotifier<CarListState> {
       final cars = (response['data'] as List)
           .map((json) => CarModel.fromJson(json as Map<String, dynamic>))
           .toList();
+
+      // Start background sequential download of thumbnails
+      _carImageService.addToQueue(cars);
+
       final hasMore =
           response['has_more'] as bool? ??
           response['hasMore'] as bool? ??
@@ -175,6 +182,11 @@ class CarListNotifier extends StateNotifier<CarListState> {
 
     state = state.copyWith(currentPage: state.currentPage + 1);
     await fetchCars(refresh: false, showCachedWhileLoading: true);
+  }
+
+  // Reset state completely (call on logout or when clearing data)
+  void reset() {
+    state = CarListState();
   }
 
   // Toggle local favorite status (optimistic UI update)

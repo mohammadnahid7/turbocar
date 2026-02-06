@@ -41,6 +41,8 @@ class CarModel {
   final DateTime updatedAt;
   @JsonKey(name: 'expires_at')
   final DateTime expiresAt;
+  @JsonKey(name: 'chat_only', defaultValue: false)
+  final bool chatOnly;
 
   // Joins/Extras
   @JsonKey(name: 'is_favorited')
@@ -53,6 +55,8 @@ class CarModel {
   final String? sellerPhoto;
   @JsonKey(name: 'seller_rating')
   final double? sellerRating;
+  @JsonKey(name: 'seller_phone')
+  final String? sellerPhone;
 
   CarModel({
     required this.id,
@@ -85,6 +89,8 @@ class CarModel {
     this.sellerName,
     this.sellerPhoto,
     this.sellerRating,
+    this.sellerPhone,
+    this.chatOnly = false,
   });
 
   factory CarModel.fromJson(Map<String, dynamic> json) =>
@@ -123,6 +129,8 @@ class CarModel {
     String? sellerName,
     String? sellerPhoto,
     double? sellerRating,
+    String? sellerPhone,
+    bool? chatOnly,
   }) {
     return CarModel(
       id: id ?? this.id,
@@ -155,6 +163,8 @@ class CarModel {
       sellerName: sellerName ?? this.sellerName,
       sellerPhoto: sellerPhoto ?? this.sellerPhoto,
       sellerRating: sellerRating ?? this.sellerRating,
+      sellerPhone: sellerPhone ?? this.sellerPhone,
+      chatOnly: chatOnly ?? this.chatOnly,
     );
   }
 }

@@ -36,40 +36,35 @@ func (s *ListingService) CreateListing(ctx context.Context, userID uuid.UUID, re
 		return nil, err
 	}
 
-	// 2. Check rate limit (5 listings per hour per user)
+	// 2. Check daily rate limit (5 posts per day)
 	if err := s.checkRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 
-	// 3. Handle images
+	// 3. Generate car ID first (needed for image paths)
+	newCarID := uuid.New()
+
+	// 4. Handle images - validate and upload to S3/R2
 	var imageURLs pq.StringArray
 
 	if len(files) > 0 {
-		// TODO: Upload to Cloudflare R2 when ready
-		// For now, use dummy placeholder URLs
-		// The multipart files are received but not uploaded to cloud yet
+		// Validate images (count, size, type)
+		if err := ValidateImages(files); err != nil {
+			return nil, err
+		}
 
-		// Generate dummy URLs based on number of files received
-		for i := range files {
-			// Using different colors for variety
-			colors := []string{"2563eb", "dc2626", "16a34a", "d97706", "7c3aed"}
-			color := colors[i%len(colors)]
-			imageURLs = append(imageURLs,
-				fmt.Sprintf("https://placehold.co/800x600/%s/white?text=Car+Image+%d", color, i+1),
-			)
+		// Upload to S3/R2 storage
+		urls, err := s.storage.UploadMultipleImages(ctx, files, newCarID.String())
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload images: %v", err)
 		}
+		imageURLs = urls
 	} else {
-		// If no files uploaded, use default dummy images
-		imageURLs = pq.StringArray{
-			"https://placehold.co/800x600/2563eb/white?text=Car+Image+1",
-			"https://placehold.co/800x600/dc2626/white?text=Car+Image+2",
-			"https://placehold.co/800x600/16a34a/white?text=Car+Image+3",
-		}
+		return nil, fmt.Errorf("at least 1 image is required")
 	}
 
-	// 4. Create car object
+	// 5. Create car object
 	now := time.Now()
-	newCarID := uuid.New()
 	car := &Car{
 		ID:           newCarID,
 		SellerID:     userID,
@@ -91,6 +86,7 @@ func (s *ListingService) CreateListing(ctx context.Context, userID uuid.UUID, re
 		Latitude:     req.Latitude,
 		Longitude:    req.Longitude,
 		Status:       CarStatusActive,
+		ChatOnly:     req.ChatOnly,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 		ExpiresAt:    now.AddDate(0, 0, 90), // 90 days expiry
@@ -348,21 +344,14 @@ func (s *ListingService) GetFavorites(ctx context.Context, userID uuid.UUID, pag
 // Helpers
 
 func (s *ListingService) checkRateLimit(ctx context.Context, userID uuid.UUID) error {
-	key := fmt.Sprintf("ratelimit:listings:%s", userID)
-
-	// Increment
-	count, err := s.cache.Incr(ctx, key).Result()
+	// Check against database count for today
+	count, err := s.repo.CountDailyPosts(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	// Set expiration on first increment
-	if count == 1 {
-		s.cache.Expire(ctx, key, 1*time.Hour)
-	}
-
-	if count > 5 {
-		return errors.New("rate limit exceeded: max 5 listings per hour")
+	if count >= 5 {
+		return errors.New("daily post limit reached: max 5 listings per day")
 	}
 	return nil
 }

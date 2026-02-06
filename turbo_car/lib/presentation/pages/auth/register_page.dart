@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
@@ -15,14 +16,13 @@ class RegisterPage extends ConsumerStatefulWidget {
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  String _completePhoneNumber = '';
 
   @override
   void dispose() {
     _fullNameController.dispose();
-    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -35,13 +35,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             .read(authProvider.notifier)
             .register(
               email: _emailController.text.trim(),
-              phone: _phoneController.text.trim(),
+              phone: _completePhoneNumber,
               password: _passwordController.text,
               fullName: _fullNameController.text.trim(),
             );
+
         if (mounted) {
-          // Navigate to login or home, or verify OTP
-          // For now, go to login
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Registration successful! Please login.'),
@@ -49,19 +48,37 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           );
           context.go('/login');
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Registration failed: ${e.toString()}')),
-          );
-        }
+      } catch (_) {
+        // Error handled by ref.listen
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    // ONLY watch the loading state - this minimizes rebuilds
+    // Input fields use TextEditingController which preserves values
+    final isLoading = ref.watch(
+      authProvider.select((state) => state.isLoading),
+    );
+
+    // Listen to Auth State for Errors (side effects only)
+    // This does NOT cause rebuilds - it only fires callbacks
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      // Handle Errors - Show SnackBar without navigation
+      if (!next.isLoading &&
+          next.error != null &&
+          (previous?.isLoading == true || previous?.error != next.error)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!.replaceAll('Exception: ', '')),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4), // Give user time to read
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -124,14 +141,27 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                CustomTextField(
-                  controller: _phoneController,
-                  label: 'Phone',
-                  hint: 'Enter your phone number',
-                  prefixIcon: const Icon(Icons.phone_outlined),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
+                IntlPhoneField(
+                  decoration: InputDecoration(
+                    labelText: 'Phone',
+                    hintText: 'Enter your phone number',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                  ),
+                  initialCountryCode: 'KR',
+                  disableLengthCheck: true,
+                  onChanged: (phone) {
+                    _completePhoneNumber = phone.completeNumber;
+                  },
+                  validator: (phone) {
+                    if (phone == null || phone.number.isEmpty) {
                       return 'Please enter your phone number';
                     }
                     return null;
@@ -158,7 +188,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 CustomButton(
                   text: 'Sign Up',
                   onPressed: _handleRegister,
-                  isLoading: authState.isLoading,
+                  isLoading: isLoading,
                 ),
                 const SizedBox(height: 24),
                 Row(

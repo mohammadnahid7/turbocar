@@ -123,3 +123,18 @@ func (r *Repository) MarkOTPAsVerified(phone string) error {
 		Update("is_verified", true).Error
 }
 
+// UpdateUserPassword updates only the password hash for a user
+func (r *Repository) UpdateUserPassword(userID string, passwordHash string) error {
+	parsedID, err := uuid.Parse(userID)
+	if err != nil {
+		return err
+	}
+	result := r.db.Model(&models.User{}).Where("id = ?", parsedID).Update("password_hash", passwordHash)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return appErrors.ErrNotFound
+	}
+	return nil
+}

@@ -57,84 +57,146 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColorDark,
       appBar: CustomAppBar(title: StringConstants.profile, isMainNavPage: true),
-      body: ListView(
-        children: [
-          // Profile header
-          _buildProfileHeader(context, ref, authState),
-          const Divider(),
-          // Settings list
-          ListTile(
-            title: const Text(StringConstants.darkMode),
-            trailing: Switch(
-              value: themeMode == ThemeMode.dark,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).toggleTheme();
-              },
-            ),
-          ),
-          ListTile(
-            title: const Text(StringConstants.myCars),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(RouteNames.myCars);
-            },
-          ),
-          ListTile(
-            title: const Text(StringConstants.language),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('English'),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios, size: 16),
-              ],
-            ),
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => LanguageSelectorModal(
-                  currentLanguage: 'English',
-                  onLanguageSelected: (language) {},
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            children: [
+              // Profile header card
+              Card(
+                elevation: 0,
+                color: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            },
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundImage: authState.user?.profilePicture != null
+                            ? NetworkImage(authState.user!.profilePicture!)
+                            : null,
+                        child: authState.user?.profilePicture == null
+                            ? const Icon(Icons.person, size: 30)
+                            : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          authState.user?.name ?? '',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () {
+                          context.push(RouteNames.profileSettings);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16), // Gap between cards
+              // Settings card
+              Card(
+                elevation: 0,
+                color: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      title: const Text(StringConstants.darkMode),
+                      leading: const Icon(Icons.dark_mode_outlined),
+                      trailing: Switch(
+                        value: themeMode == ThemeMode.dark,
+                        onChanged: (value) {
+                          ref.read(themeProvider.notifier).toggleTheme();
+                        },
+                      ),
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.myCars),
+                      leading: const Icon(Icons.car_rental_outlined),
+                      onTap: () {
+                        context.push(RouteNames.myCars);
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.language),
+                      leading: const Icon(Icons.language_outlined),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('English'),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_ios, size: 16),
+                        ],
+                      ),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => LanguageSelectorModal(
+                            currentLanguage: 'English',
+                            onLanguageSelected: (language) {},
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.changePassword),
+                      leading: const Icon(Icons.lock_outline),
+                      onTap: () {
+                        context.push(RouteNames.changePassword);
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.contactUs),
+                      leading: const Icon(Icons.contact_page_outlined),
+                      onTap: () {
+                        context.push(RouteNames.contactUs);
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.aboutUs),
+                      leading: const Icon(Icons.info_outline),
+                      onTap: () {
+                        context.push(RouteNames.aboutUs);
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(
+                        StringConstants.logout,
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      leading: const Icon(Icons.logout, color: Colors.red),
+                      onTap: () {
+                        ConfirmationDialog.show(
+                          context,
+                          title: StringConstants.logout,
+                          content: const Text(
+                            StringConstants.logoutConfirmation,
+                          ),
+                          onConfirm: () async {
+                            await ref.read(authProvider.notifier).logout();
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          ListTile(
-            title: const Text(StringConstants.changePassword),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(RouteNames.changePassword);
-            },
-          ),
-          ListTile(
-            title: const Text(StringConstants.contactUs),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(RouteNames.contactUs);
-            },
-          ),
-          ListTile(
-            title: const Text(StringConstants.aboutUs),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(RouteNames.aboutUs);
-            },
-          ),
-          ListTile(
-            title: const Text(StringConstants.logout),
-            trailing: const Icon(Icons.logout),
-            onTap: () {
-              ConfirmationDialog.show(
-                context,
-                title: StringConstants.logout,
-                content: const Text(StringConstants.logoutConfirmation),
-                onConfirm: () async {
-                  await ref.read(authProvider.notifier).logout();
-                },
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -148,77 +210,103 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColorDark,
       appBar: CustomAppBar(title: StringConstants.profile, isMainNavPage: true),
-      body: ListView(
-        children: [
-          // Guest header
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const CircleAvatar(
-                  radius: 50,
-                  child: Icon(Icons.person, size: 50),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            children: [
+              // Guest header card
+              Card(
+                elevation: 0,
+                color: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  StringConstants.guest,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 22,
+                        child: Icon(Icons.person, size: 30),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        StringConstants.guest,
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(width: 16),
+                      // Login / Sign Up button for guests
+                      Expanded(
+                        child: CustomButton(
+                          text: StringConstants.loginOrSignup,
+                          onPressed: () => context.push(RouteNames.login),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                // Login / Sign Up button for guests
-                CustomButton(
-                  text: StringConstants.loginOrSignup,
-                  onPressed: () => context.push(RouteNames.login),
+              ),
+              const SizedBox(height: 16), // Gap between cards
+              // Settings card
+              Card(
+                elevation: 0,
+                color: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-          ),
-          const Divider(),
-          // Limited settings for guests
-          ListTile(
-            title: const Text(StringConstants.darkMode),
-            trailing: Switch(
-              value: themeMode == ThemeMode.dark,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).toggleTheme();
-              },
-            ),
-          ),
-          ListTile(
-            title: const Text(StringConstants.language),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('English'),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios, size: 16),
-              ],
-            ),
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => LanguageSelectorModal(
-                  currentLanguage: 'English',
-                  onLanguageSelected: (language) {},
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      title: const Text(StringConstants.darkMode),
+                      trailing: Switch(
+                        value: themeMode == ThemeMode.dark,
+                        onChanged: (value) {
+                          ref.read(themeProvider.notifier).toggleTheme();
+                        },
+                      ),
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.language),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('English'),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_ios, size: 16),
+                        ],
+                      ),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => LanguageSelectorModal(
+                            currentLanguage: 'English',
+                            onLanguageSelected: (language) {},
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.contactUs),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        context.push(RouteNames.contactUs);
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(StringConstants.aboutUs),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        context.push(RouteNames.aboutUs);
+                      },
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+            ],
           ),
-          ListTile(
-            title: const Text(StringConstants.contactUs),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(RouteNames.contactUs);
-            },
-          ),
-          ListTile(
-            title: const Text(StringConstants.aboutUs),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              context.push(RouteNames.aboutUs);
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

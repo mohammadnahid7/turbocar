@@ -5,7 +5,6 @@ library;
 
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/providers/auth_provider.dart';
 import '../../presentation/pages/main_navigation_page.dart';
 import '../../presentation/pages/auth/login_page.dart';
 import '../../presentation/pages/auth/register_page.dart';
@@ -17,17 +16,25 @@ import '../../presentation/pages/profile/my_cars_page.dart';
 import '../../presentation/pages/profile/change_password_page.dart';
 import '../../presentation/pages/profile/contact_us_page.dart';
 import '../../presentation/pages/profile/about_us_page.dart';
+import '../../presentation/pages/profile/profile_settings_page.dart';
+import 'auth_router_notifier.dart';
 import 'route_names.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  // Use the controlled notifier that only fires on auth STATUS changes
+  // This prevents router rebuilds during loading/error states
+  final authNotifier = ref.watch(authRouterNotifierProvider);
 
   return GoRouter(
     initialLocation: RouteNames.root,
+    // CRITICAL: Use refreshListenable instead of rebuilding entire router
+    // This ensures pages are not rebuilt during loading/error states
+    refreshListenable: authNotifier,
     redirect: (context, state) {
-      final isAuthenticated = authState.isAuthenticated;
-      final isGuest = authState.isGuest;
-      final isInitialized = authState.isInitialized;
+      // Read current auth state (not watch - we use refreshListenable for reactivity)
+      final isAuthenticated = authNotifier.isAuthenticated;
+      final isGuest = authNotifier.isGuest;
+      final isInitialized = authNotifier.isInitialized;
       final isOnLoginPage = state.uri.path == RouteNames.login;
       final isOnRegisterPage = state.uri.path == RouteNames.register;
       final isOnSplashPage = state.uri.path == RouteNames.splash;
@@ -44,7 +51,6 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // If not authenticated and not guest, redirect to login
       // But allow register page
-      // And don't redirect if we are already on splash (handled above, but just in case)
       if (!isAuthenticated && !isGuest && !isOnLoginPage && !isOnRegisterPage) {
         return RouteNames.login;
       }
@@ -141,6 +147,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RouteNames.aboutUs,
         name: 'aboutUs',
         builder: (context, state) => const AboutUsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.profileSettings,
+        name: 'profileSettings',
+        builder: (context, state) => const ProfileSettingsPage(),
       ),
     ],
   );

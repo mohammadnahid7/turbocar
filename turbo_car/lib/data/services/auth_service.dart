@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/network/dio_client.dart';
 import '../models/user_model.dart';
@@ -92,14 +94,14 @@ class AuthService {
   ) async {
     try {
       await _dioClient.post(
-        '/auth/change-password',
+        ApiConstants.changePassword,
         data: {
           'current_password': currentPassword,
           'new_password': newPassword,
         },
       );
     } catch (e) {
-      // rethrow;
+      rethrow;
     }
   }
 
@@ -112,6 +114,23 @@ class AuthService {
     } catch (e) {
       // If unauthorized, token might be invalid
       return null;
+    }
+  }
+
+  Future<String> uploadImage(File file) async {
+    try {
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(file.path),
+      });
+
+      final response = await _dioClient.post(
+        '/api/upload', // Generic upload endpoint
+        data: formData,
+      );
+
+      return response.data['url'] as String;
+    } catch (e) {
+      rethrow;
     }
   }
 }

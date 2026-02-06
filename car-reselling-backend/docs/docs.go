@@ -325,6 +325,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/test/upload": {
+            "post": {
+                "description": "Upload a test image to Cloudflare R2 (no auth required - for testing only)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "test"
+                ],
+                "summary": "Test image upload to R2",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file to upload",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns uploaded image URL",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/cars": {
             "get": {
                 "description": "Search and filter car listings",
@@ -488,17 +539,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Condition",
+                        "description": "Condition (optional: excellent, good, fair)",
                         "name": "condition",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
-                        "description": "Transmission",
+                        "description": "Transmission (optional: automatic, manual)",
                         "name": "transmission",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -509,10 +558,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Color",
+                        "description": "Color (optional)",
                         "name": "color",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -529,24 +577,21 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "State",
+                        "description": "State (optional)",
                         "name": "state",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "number",
-                        "description": "Latitude",
+                        "description": "Latitude (optional)",
                         "name": "latitude",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "number",
-                        "description": "Longitude",
+                        "description": "Longitude (optional)",
                         "name": "longitude",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "file",

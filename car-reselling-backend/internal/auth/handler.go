@@ -214,3 +214,72 @@ func (h *Handler) GetCurrentUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// UpdateProfile updates the current authenticated user's profile
+// @Summary Update profile
+// @Description Update the current authenticated user's profile information
+// @Tags auth
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body UpdateProfileRequest true "Profile update data"
+// @Success 200 {object} UserDTO
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /api/auth/me [put]
+func (h *Handler) UpdateProfile(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		appErrors.HandleError(c, appErrors.ErrUnauthorized)
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		appErrors.HandleErrorWithMessage(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	user, err := h.service.UpdateProfile(c.Request.Context(), userID.(string), &req)
+	if err != nil {
+		appErrors.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+// ChangePassword changes the authenticated user's password
+// @Summary Change password
+// @Description Change the authenticated user's password
+// @Tags auth
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body ChangePasswordRequest true "Password change data"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /api/auth/change-password [post]
+func (h *Handler) ChangePassword(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		appErrors.HandleError(c, appErrors.ErrUnauthorized)
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		appErrors.HandleErrorWithMessage(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.service.ChangePassword(c.Request.Context(), userID.(string), &req); err != nil {
+		appErrors.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, MessageResponse{
+		Message: "Password changed successfully",
+	})
+}

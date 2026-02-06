@@ -9,12 +9,15 @@ import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/post_car_provider.dart';
 import '../../../data/providers/car_provider.dart';
 import '../../../core/constants/string_constants.dart';
+import '../../../core/constants/car_brands.dart';
 import '../../../core/router/route_names.dart';
 import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/custom_dropdown.dart';
 import '../../widgets/common/image_picker_grid.dart';
+import '../../../core/constants/korean_cities.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 
 class PostPage extends ConsumerStatefulWidget {
   const PostPage({super.key});
@@ -118,43 +121,43 @@ class _PostPageState extends ConsumerState<PostPage> {
     });
 
     // If guest or not authenticated, show login prompt
-    // if (authState.isGuest || !authState.isAuthenticated) {
-    //   return Scaffold(
-    //     backgroundColor: Theme.of(context).primaryColorDark,
-    //     appBar: CustomAppBar(
-    //       title: StringConstants.postCarTitle,
-    //       isMainNavPage: true,
-    //     ),
-    //     body: Center(
-    //       child: Padding(
-    //         padding: const EdgeInsets.all(32.0),
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           children: [
-    //             Icon(
-    //               Icons.add_circle_outline,
-    //               size: 80,
-    //               color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-    //             ),
-    //             const SizedBox(height: 24),
-    //             Text(
-    //               StringConstants.pleaseLoginToPost,
-    //               textAlign: TextAlign.center,
-    //               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-    //                 color: Theme.of(context).colorScheme.onSurface,
-    //               ),
-    //             ),
-    //             const SizedBox(height: 32),
-    //             CustomButton(
-    //               text: StringConstants.loginOrSignup,
-    //               onPressed: () => context.push(RouteNames.login),
-    //             ),
-    //           ],
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
+    if (authState.isGuest || !authState.isAuthenticated) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).primaryColorDark,
+        appBar: CustomAppBar(
+          title: StringConstants.postCarTitle,
+          isMainNavPage: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_circle_outline,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  StringConstants.pleaseLoginToPost,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                CustomButton(
+                  text: StringConstants.loginOrSignup,
+                  onPressed: () => context.push(RouteNames.login),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     // Authenticated user - show post form
     return Scaffold(
@@ -172,7 +175,7 @@ class _PostPageState extends ConsumerState<PostPage> {
             children: [
               // Row 1: Car Type Dropdown (full width)
               CustomDropdown<String>(
-                hint: StringConstants.selectCarType,
+                label: StringConstants.selectCarType,
                 value: postState.carType.isEmpty ? null : postState.carType,
                 items: _carTypes
                     .map(
@@ -191,10 +194,57 @@ class _PostPageState extends ConsumerState<PostPage> {
               Row(
                 children: [
                   Expanded(
-                    child: CustomTextField(
-                      hint: StringConstants.carName,
-                      controller: _carNameController,
-                      onChanged: (value) => postNotifier.updateCarName(value),
+                    child: DropdownButtonFormField<String>(
+                      value: postState.carName.isEmpty
+                          ? null
+                          : postState.carName,
+                      decoration: InputDecoration(
+                        labelText: 'Car Brand',
+                        filled: true,
+                        fillColor: Theme.of(context).cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      items: CarBrands.validBrands.map((brand) {
+                        final logoPath = CarBrands.getLogoPath(brand);
+                        return DropdownMenuItem<String>(
+                          value: brand,
+                          child: Row(
+                            children: [
+                              if (logoPath != null) ...[
+                                Image.asset(
+                                  logoPath,
+                                  width: 24,
+                                  height: 24,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(
+                                        Icons.directions_car,
+                                        size: 24,
+                                      ),
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                              Text(brand),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) =>
+                          postNotifier.updateCarName(value ?? ''),
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Required' : null,
                     ),
@@ -202,7 +252,7 @@ class _PostPageState extends ConsumerState<PostPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: CustomTextField(
-                      hint: StringConstants.carModelLabel,
+                      label: StringConstants.carModelLabel,
                       controller: _carModelController,
                       onChanged: (value) => postNotifier.updateCarModel(value),
                       validator: (value) =>
@@ -251,7 +301,7 @@ class _PostPageState extends ConsumerState<PostPage> {
                 children: [
                   Expanded(
                     child: CustomTextField(
-                      hint: StringConstants.mileageLabel,
+                      label: StringConstants.mileageLabel,
                       controller: _mileageController,
                       keyboardType: TextInputType.number,
                       onChanged: (value) =>
@@ -268,7 +318,7 @@ class _PostPageState extends ConsumerState<PostPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: CustomTextField(
-                      hint: StringConstants.yearLabel,
+                      label: StringConstants.yearLabel,
                       controller: _yearController,
                       keyboardType: TextInputType.number,
                       onChanged: (value) =>
@@ -301,7 +351,7 @@ class _PostPageState extends ConsumerState<PostPage> {
                 children: [
                   Expanded(
                     child: CustomTextField(
-                      hint: StringConstants.priceLabel,
+                      label: StringConstants.priceLabel,
                       controller: _priceController,
                       keyboardType: TextInputType.number,
                       onChanged: (value) =>
@@ -342,92 +392,142 @@ class _PostPageState extends ConsumerState<PostPage> {
               ),
               const SizedBox(height: 16),
 
-              // Additional fields section
-              Text(
-                'Additional Details',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).appBarTheme.foregroundColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
+              // // Additional fields section
+              // Text(
+              //   'Additional Details',
+              //   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              //     color: Theme.of(context).appBarTheme.foregroundColor,
+              //     fontWeight: FontWeight.bold,
+              //   ),
+              // ),
+              // const SizedBox(height: 12),
 
-              // Condition & Transmission dropdowns
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomDropdown<String>(
-                      hint: StringConstants.conditionLabel,
-                      value: postState.condition.isEmpty
-                          ? null
-                          : postState.condition,
-                      items: _conditions
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(c[0].toUpperCase() + c.substring(1)),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) =>
-                          postNotifier.updateCondition(value ?? 'good'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CustomDropdown<String>(
-                      hint: StringConstants.transmissionLabel,
-                      value: postState.transmission.isEmpty
-                          ? null
-                          : postState.transmission,
-                      items: _transmissions
-                          .map(
-                            (t) => DropdownMenuItem(
-                              value: t,
-                              child: Text(t[0].toUpperCase() + t.substring(1)),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) =>
-                          postNotifier.updateTransmission(value ?? 'automatic'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+              // // Condition & Transmission dropdowns
+              // Row(
+              //   children: [
+              //     Expanded(
+              //       child: CustomDropdown<String>(
+              //         hint: StringConstants.conditionLabel,
+              //         value: postState.condition.isEmpty
+              //             ? null
+              //             : postState.condition,
+              //         items: _conditions
+              //             .map(
+              //               (c) => DropdownMenuItem(
+              //                 value: c,
+              //                 child: Text(c[0].toUpperCase() + c.substring(1)),
+              //               ),
+              //             )
+              //             .toList(),
+              //         onChanged: (value) =>
+              //             postNotifier.updateCondition(value ?? 'good'),
+              //       ),
+              //     ),
+              //     const SizedBox(width: 12),
+              //     Expanded(
+              //       child: CustomDropdown<String>(
+              //         hint: StringConstants.transmissionLabel,
+              //         value: postState.transmission.isEmpty
+              //             ? null
+              //             : postState.transmission,
+              //         items: _transmissions
+              //             .map(
+              //               (t) => DropdownMenuItem(
+              //                 value: t,
+              //                 child: Text(t[0].toUpperCase() + t.substring(1)),
+              //               ),
+              //             )
+              //             .toList(),
+              //         onChanged: (value) =>
+              //             postNotifier.updateTransmission(value ?? 'automatic'),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(height: 16),
 
-              // Color field
-              CustomTextField(
-                hint: StringConstants.colorLabel,
-                controller: _colorController,
-                onChanged: (value) => postNotifier.updateColor(value),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
+              // // Color field
+              // CustomTextField(
+              //   hint: StringConstants.colorLabel,
+              //   controller: _colorController,
+              //   onChanged: (value) => postNotifier.updateColor(value),
+              //   validator: (value) =>
+              //       value == null || value.isEmpty ? 'Required' : null,
+              // ),
+              // const SizedBox(height: 16),
 
               // City & State
               Row(
                 children: [
                   Expanded(
-                    child: CustomTextField(
-                      hint: StringConstants.cityLabel,
-                      controller: _cityController,
-                      onChanged: (value) => postNotifier.updateCity(value),
+                    child: DropdownSearch<String>(
+                      items: (filter, loadProps) => koreanCities,
+                      decoratorProps: DropDownDecoratorProps(
+                        decoration: InputDecoration(
+                          labelText: StringConstants.cityLabel,
+                          filled: true,
+                          fillColor: Theme.of(context).cardColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                        ),
+                      ),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        searchFieldProps: TextFieldProps(
+                          decoration: InputDecoration(
+                            hintText: 'Search city...',
+                            prefixIcon: Icon(Icons.search),
+                            filled: true,
+                            fillColor: Theme.of(context).cardColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                          ),
+                        ),
+                        menuProps: MenuProps(
+                          borderRadius: BorderRadius.circular(12),
+                          backgroundColor: Theme.of(context).cardColor,
+                        ),
+                      ),
+                      selectedItem: postState.city.isEmpty
+                          ? null
+                          : postState.city,
+                      onChanged: (value) {
+                        if (value != null) {
+                          postNotifier.updateCity(value);
+                        }
+                      },
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Required' : null,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CustomTextField(
-                      hint: StringConstants.stateLabel,
-                      controller: _stateController,
-                      onChanged: (value) => postNotifier.updateState(value),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Required' : null,
-                    ),
-                  ),
+                  // const SizedBox(width: 12),
+                  // Expanded(
+                  //   child: CustomTextField(
+                  //     hint: StringConstants.stateLabel,
+                  //     controller: _stateController,
+                  //     onChanged: (value) => postNotifier.updateState(value),
+                  //     validator: (value) =>
+                  //         value == null || value.isEmpty ? 'Required' : null,
+                  //   ),
+                  // ),
                 ],
               ),
               const SizedBox(height: 16),

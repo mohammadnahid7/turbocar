@@ -15,8 +15,12 @@ class CustomTextField extends StatefulWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final bool enabled;
+  final bool readOnly;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
   final double borderRadius;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
 
   const CustomTextField({
     super.key,
@@ -30,8 +34,12 @@ class CustomTextField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.enabled = true,
+    this.readOnly = false,
     this.onChanged,
+    this.onSubmitted,
     this.borderRadius = 100,
+    this.focusNode,
+    this.textInputAction,
   });
 
   @override
@@ -51,12 +59,16 @@ class _CustomTextFieldState extends State<CustomTextField> {
         decoration: TextDecoration.none,
       ),
       controller: widget.controller,
+      focusNode: widget.focusNode,
       obscureText: isPasswordField ? _obscureText : false,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
       maxLines: widget.maxLines,
       enabled: widget.enabled,
+      readOnly: widget.readOnly,
       onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onSubmitted,
+      textInputAction: widget.textInputAction,
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,

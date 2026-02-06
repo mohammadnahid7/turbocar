@@ -195,38 +195,107 @@ class ImagePickerGrid extends StatelessWidget {
   }
 
   Widget _buildImageTile(BuildContext context, int index) {
-    return Container(
-      width: 120,
-      height: 120,
-      margin: const EdgeInsets.only(right: 8),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              File(images[index].path),
-              width: 120,
-              height: 120,
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () => _showImagePreview(context, index),
+      child: Container(
+        width: 120,
+        height: 120,
+        margin: const EdgeInsets.only(right: 8),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(images[index].path),
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          if (enabled)
+            if (enabled)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => onImageRemoved(index),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImagePreview(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Full-size image
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(images[index].path),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            // Close button
             Positioned(
-              top: 4,
-              right: 4,
-              child: GestureDetector(
-                onTap: () => onImageRemoved(index),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.6),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 16),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ),
+            // Image counter
+            Positioned(
+              bottom: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${index + 1} / ${images.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

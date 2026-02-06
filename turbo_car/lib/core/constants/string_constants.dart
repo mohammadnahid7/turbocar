@@ -111,6 +111,7 @@ class StringConstants {
   static const String transmissionLabel = 'Transmission';
   static const String colorLabel = 'Color';
   static const String cityLabel = 'City';
+  static const String addressLabel = 'Address';
   static const String stateLabel = 'State';
   static const String chatOnlyLabel = 'Chat only (no calls)';
   static const String postButton = 'Post';

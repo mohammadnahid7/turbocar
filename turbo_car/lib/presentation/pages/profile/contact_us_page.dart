@@ -13,6 +13,7 @@ class ContactUsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).primaryColorDark,
       appBar: CustomAppBar(title: StringConstants.contactUsTitle),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

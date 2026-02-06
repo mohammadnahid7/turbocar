@@ -45,19 +45,21 @@ type Car struct {
 	Color        string         `json:"color" db:"color"`
 	VIN          string         `json:"vin" db:"vin"`
 	Images       pq.StringArray `json:"images" gorm:"type:text[]"`
-	City         string         `json:"city" db:"city"`
-	State        string         `json:"state" db:"state"`
-	Latitude     float64        `json:"latitude" db:"-"`  // Computed from PostGIS
-	Longitude    float64        `json:"longitude" db:"-"` // Computed from PostGIS
-	Status       string         `json:"status" db:"status"`
-	IsFeatured   bool           `json:"is_featured" db:"is_featured"`
-	ViewsCount   int            `json:"views_count" db:"views_count"`
-	CreatedAt    time.Time      `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at" db:"updated_at"`
-	ExpiresAt    time.Time      `json:"expires_at" db:"expires_at"`
+	City         string         `json:"city" gorm:"column:city"`
+	State        string         `json:"state" gorm:"column:state"`
+	Latitude     float64        `json:"latitude" gorm:"-"`  // Computed from PostGIS, not stored
+	Longitude    float64        `json:"longitude" gorm:"-"` // Computed from PostGIS, not stored
+	Status       string         `json:"status" gorm:"column:status"`
+	IsFeatured   bool           `json:"is_featured" gorm:"column:is_featured"`
+	ChatOnly     bool           `json:"chat_only" gorm:"column:chat_only"`
+	ViewsCount   int            `json:"views_count" gorm:"column:views_count"`
+	CreatedAt    time.Time      `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt    time.Time      `json:"updated_at" gorm:"column:updated_at"`
+	ExpiresAt    time.Time      `json:"expires_at" gorm:"column:expires_at"`
 
-	// Joins/Extras
-	SellerName   string  `json:"seller_name,omitempty" db:"seller_name"`
-	SellerPhoto  string  `json:"seller_photo,omitempty" db:"seller_photo"`
-	SellerRating float64 `json:"seller_rating,omitempty" db:"seller_rating"`
+	// Joins/Extras - populated via JOIN queries, not stored in cars table
+	SellerName   string  `json:"seller_name,omitempty" gorm:"-"`
+	SellerPhoto  string  `json:"seller_photo,omitempty" gorm:"-"`
+	SellerRating float64 `json:"seller_rating,omitempty" gorm:"-"`
+	SellerPhone  string  `json:"seller_phone,omitempty" gorm:"-"`
 }

@@ -66,6 +66,11 @@ class ApiService {
     await _dioClient.post(ApiConstants.toggleFavorite(carId));
   }
 
+  Future<void> incrementView(String carId) async {
+    // Fire and forget, or wait? Usually wait but ignore result
+    await _dioClient.post('${ApiConstants.cars}/$carId/view');
+  }
+
   // Chat endpoints
   Future<List<ChatModel>> getChats() async {
     final response = await _dioClient.get(ApiConstants.chats);

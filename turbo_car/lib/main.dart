@@ -12,7 +12,9 @@ import 'data/providers/post_car_provider.dart';
 import 'data/providers/saved_cars_provider.dart';
 import 'data/providers/theme_provider.dart';
 import 'data/providers/user_provider.dart';
+import 'data/providers/car_image_provider.dart';
 import 'core/providers/providers.dart';
+import 'core/services/car_image_service.dart';
 import 'app.dart';
 
 void main() async {
@@ -41,19 +43,26 @@ void main() async {
           final storageService = ref.watch(storageServiceProvider);
           // We need access to SavedCarsNotifier for syncing on login
           final savedCarsNotifier = ref.watch(savedCarsProvider.notifier);
+          // We need access to CarListNotifier for clearing on logout
+          final carListNotifier = ref.watch(carListProvider.notifier);
 
           final notifier = AuthNotifier(
             authRepository,
             storageService,
             savedCarsNotifier,
+            carListNotifier: carListNotifier,
           );
-          // Check auth status on initialization
           notifier.checkAuthStatus();
           return notifier;
         }),
+        carImageServiceProvider.overrideWith((ref) {
+          final dioClient = ref.watch(dioClientProvider);
+          return CarImageService(dio: dioClient.dio);
+        }),
         carListProvider.overrideWith((ref) {
           final carRepository = ref.watch(carRepositoryProvider);
-          return CarListNotifier(carRepository);
+          final carImageService = ref.watch(carImageServiceProvider.notifier);
+          return CarListNotifier(carRepository, carImageService);
         }),
         savedCarsProvider.overrideWith((ref) {
           final carRepository = ref.watch(carRepositoryProvider);

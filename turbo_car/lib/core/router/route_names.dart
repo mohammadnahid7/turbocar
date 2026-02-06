@@ -19,4 +19,5 @@ class RouteNames {
   static const String changePassword = '/change-password';
   static const String contactUs = '/contact-us';
   static const String aboutUs = '/about-us';
+  static const String profileSettings = '/profile/settings';
 }

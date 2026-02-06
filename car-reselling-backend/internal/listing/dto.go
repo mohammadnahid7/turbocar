@@ -10,15 +10,16 @@ type CreateCarRequest struct {
 	Year         int     `form:"year" binding:"required,min=1900" example:"2020"`
 	Mileage      int     `form:"mileage" binding:"required,min=0" example:"15000"`
 	Price        float64 `form:"price" binding:"required,gt=0" example:"25000"`
-	Condition    string  `form:"condition" binding:"required,oneof=excellent good fair" example:"excellent"`
-	Transmission string  `form:"transmission" binding:"required,oneof=automatic manual" example:"automatic"`
+	Condition    string  `form:"condition" binding:"omitempty,oneof=excellent good fair" example:"excellent"`
+	Transmission string  `form:"transmission" binding:"omitempty,oneof=automatic manual" example:"automatic"`
 	FuelType     string  `form:"fuel_type" binding:"required,oneof=petrol diesel electric hybrid" example:"petrol"`
-	Color        string  `form:"color" binding:"required" example:"White"`
+	Color        string  `form:"color" binding:"omitempty" example:"White"`
 	VIN          string  `form:"vin" binding:"omitempty,alphanum" example:"ABC1234567890"`
 	City         string  `form:"city" binding:"required" example:"New York"`
-	State        string  `form:"state" binding:"required" example:"NY"`
-	Latitude     float64 `form:"latitude" binding:"required,latitude" example:"40.7128"`
-	Longitude    float64 `form:"longitude" binding:"required,longitude" example:"-74.0060"`
+	State        string  `form:"state" binding:"omitempty" example:"NY"`
+	Latitude     float64 `form:"latitude" binding:"omitempty" example:"40.7128"`
+	Longitude    float64 `form:"longitude" binding:"omitempty" example:"-74.0060"`
+	ChatOnly     bool    `form:"chat_only" example:"true"`
 }
 
 // UpdateCarRequest represents the payload for updating a listing
@@ -41,6 +42,7 @@ type UpdateCarRequest struct {
 	Latitude     float64 `form:"latitude" binding:"omitempty,latitude" example:"42.6526"`
 	Longitude    float64 `form:"longitude" binding:"omitempty,longitude" example:"-73.7562"`
 	Status       string  `form:"status" binding:"omitempty,oneof=active sold expired deleted" example:"active"`
+	ChatOnly     bool    `form:"chat_only" example:"false"`
 }
 
 // ListCarsQuery represents the query parameters for listing cars

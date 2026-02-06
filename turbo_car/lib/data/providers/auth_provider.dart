@@ -2,11 +2,15 @@
 /// State management for authentication using Riverpod
 library;
 
+import 'dart:io';
+import 'package:dio/dio.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 import '../services/storage_service.dart';
 import 'saved_cars_provider.dart';
+import 'car_provider.dart';
 
 // Auth State
 class AuthState {
@@ -51,12 +55,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _authRepository;
   final StorageService _storageService;
   final SavedCarsNotifier _savedCarsNotifier;
+  final CarListNotifier? _carListNotifier;
 
   AuthNotifier(
     this._authRepository,
     this._storageService,
-    this._savedCarsNotifier,
-  ) : super(AuthState());
+    this._savedCarsNotifier, {
+    CarListNotifier? carListNotifier,
+  }) : _carListNotifier = carListNotifier,
+       super(AuthState());
 
   // Login
   Future<void> login(String email, String password) async {
@@ -75,9 +82,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // IMPORTANT: Explicitly set isAuthenticated to false to prevent router redirect
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: false,
+        error: _extractErrorMessage(e),
+      );
       rethrow;
     }
+  }
+
+  /// Extracts a user-friendly error message from various exception types
+  String _extractErrorMessage(dynamic e) {
+    if (e is DioException) {
+      // Check for our custom NetworkException inside DioException.error
+      if (e.error != null && e.error is Exception) {
+        return e.error.toString();
+      }
+      // Otherwise, try to get message from response body
+      final responseData = e.response?.data;
+      if (responseData is Map && responseData.containsKey('message')) {
+        return responseData['message'].toString();
+      }
+      // Fallback to DioException message
+      return e.message ?? 'Network error occurred';
+    }
+    return e.toString().replaceAll('Exception: ', '');
   }
 
   // Register
@@ -98,7 +128,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Logic for after registration (e.g. login?) can also sync if needed
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: _extractErrorMessage(e));
       rethrow;
     }
   }
@@ -123,9 +153,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     try {
       await _authRepository.logout();
+      // Clear car list state to prevent doubling on re-login
+      _carListNotifier?.reset();
       state = AuthState(isInitialized: true);
     } catch (e) {
       // Clear state even if API call fails
+      _carListNotifier?.reset();
       state = AuthState(isInitialized: true);
       rethrow;
     }
@@ -147,7 +180,42 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _authRepository.changePassword(currentPassword, newPassword);
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: _extractErrorMessage(e));
+      rethrow;
+    }
+  }
+
+  Future<String> uploadImage(File file) async {
+    // Ideally this should be in a separate provider/service if used elsewhere
+    // But since it's only here for now:
+    try {
+      return await _authRepository.uploadImage(file);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Update Profile
+  Future<void> updateProfile({
+    String? fullName,
+    String? gender,
+    String? dob,
+    String? photoUrl,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final userData = <String, dynamic>{};
+      if (fullName != null) userData['full_name'] = fullName;
+      if (gender != null) userData['gender'] = gender;
+      if (dob != null) userData['dob'] = dob;
+      if (photoUrl != null) userData['profile_photo_url'] = photoUrl;
+
+      final updatedUser = await _authRepository.updateProfile(userData);
+
+      // Update local state
+      state = state.copyWith(isLoading: false, user: updatedUser);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _extractErrorMessage(e));
       rethrow;
     }
   }

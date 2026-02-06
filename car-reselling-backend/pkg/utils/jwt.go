@@ -19,13 +19,13 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateAccessToken generates a JWT access token with 15 minutes expiry
+// GenerateAccessToken generates a JWT access token with 5 years expiry
 func GenerateAccessToken(userID, email, secret string) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * 365 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
@@ -35,12 +35,12 @@ func GenerateAccessToken(userID, email, secret string) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-// GenerateRefreshToken generates a JWT refresh token with 30 days expiry
+// GenerateRefreshToken generates a JWT refresh token with 5 years expiry
 func GenerateRefreshToken(userID, secret string) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * 365 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
@@ -81,4 +81,3 @@ func ExtractUserID(tokenString, secret string) (string, error) {
 	}
 	return claims.UserID, nil
 }
-

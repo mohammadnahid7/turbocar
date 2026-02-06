@@ -162,7 +162,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 controller: _searchController,
                                 hint: StringConstants.search,
                                 prefixIcon: const Icon(Icons.search),
-                                onChanged: (value) {
+                                textInputAction: TextInputAction.search,
+                                onSubmitted: (value) {
                                   if (value.isEmpty) {
                                     ref
                                         .read(carListProvider.notifier)

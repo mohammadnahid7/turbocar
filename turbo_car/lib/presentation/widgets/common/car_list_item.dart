@@ -1,15 +1,13 @@
-/// Car List Item
-/// Universal car card widget for displaying car listings
-library;
-
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:turbo_car/presentation/widgets/common/custom_button.dart';
-import 'package:turbo_car/presentation/widgets/common/sequential_network_image.dart';
 import '../../../data/models/car_model.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/providers/car_image_provider.dart';
 
-class CarListItem extends StatefulWidget {
+class CarListItem extends ConsumerStatefulWidget {
   final CarModel car;
   final bool showSaveButton;
   final bool showDeleteButton;
@@ -32,10 +30,10 @@ class CarListItem extends StatefulWidget {
   });
 
   @override
-  State<CarListItem> createState() => _CarListItemState();
+  ConsumerState<CarListItem> createState() => _CarListItemState();
 }
 
-class _CarListItemState extends State<CarListItem>
+class _CarListItemState extends ConsumerState<CarListItem>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true; // Keep widget alive to prevent rebuilds
@@ -64,24 +62,39 @@ class _CarListItemState extends State<CarListItem>
                 ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
                   child: widget.car.images.isNotEmpty
-                      ? SequentialNetworkImage(
-                          imageUrl: widget.car.images.first,
-                          width: 96,
-                          height: 96,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const SizedBox(
-                            width: 96,
-                            height: 96,
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            width: 96,
-                            height: 96,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image_not_supported),
-                          ),
+                      ? Builder(
+                          builder: (context) {
+                            final imageMap = ref.watch(carImageServiceProvider);
+                            final localPath = imageMap[widget.car.id];
+
+                            if (localPath != null) {
+                              return Image.file(
+                                File(localPath),
+                                width: 96,
+                                height: 96,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      width: 96,
+                                      height: 96,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.broken_image),
+                                    ),
+                              );
+                            }
+
+                            // While waiting for download, show placeholder
+                            return Container(
+                              width: 96,
+                              height: 96,
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
                         )
                       : Container(
                           width: 96,

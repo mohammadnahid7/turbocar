@@ -3,10 +3,12 @@ package auth
 // RegisterRequest represents the registration request
 // @Description Registration request with user details
 type RegisterRequest struct {
-	Email    string `json:"email" binding:"required,email" example:"user@example.com"`
-	Phone    string `json:"phone" binding:"required" example:"+1234567890"`
-	Password string `json:"password" binding:"required,min=8" example:"SecurePass123"`
-	FullName string `json:"full_name" binding:"required" example:"John Doe"`
+	Email    string  `json:"email" binding:"required,email" example:"user@example.com"`
+	Phone    string  `json:"phone" binding:"required" example:"+1234567890"`
+	Password string  `json:"password" binding:"required,min=8" example:"SecurePass123"`
+	FullName string  `json:"full_name" binding:"required" example:"John Doe"`
+	Gender   *string `json:"gender" example:"male"`
+	DOB      *string `json:"dob" example:"1990-01-01"`
 }
 
 // LoginRequest represents the login request
@@ -50,9 +52,20 @@ type UserDTO struct {
 	Email           string  `json:"email" example:"user@example.com"`
 	Phone           string  `json:"phone" example:"+1234567890"`
 	FullName        string  `json:"full_name" example:"John Doe"`
+	Gender          *string `json:"gender" example:"male"`
+	DOB             *string `json:"dob" example:"1990-01-01T00:00:00Z"`
 	ProfilePhotoURL *string `json:"profile_photo_url" example:"https://example.com/photo.jpg"`
 	IsVerified      bool    `json:"is_verified" example:"true"`
 	IsDealer        bool    `json:"is_dealer" example:"false"`
+}
+
+// UpdateProfileRequest represents the update profile request
+// @Description Request to update user profile
+type UpdateProfileRequest struct {
+	FullName        *string `json:"full_name" example:"John Doe"`
+	Gender          *string `json:"gender" example:"male"`
+	DOB             *string `json:"dob" example:"1990-01-01"`
+	ProfilePhotoURL *string `json:"profile_photo_url" example:"https://example.com/photo.jpg"`
 }
 
 // MessageResponse represents a simple message response
@@ -61,3 +74,9 @@ type MessageResponse struct {
 	Message string `json:"message" example:"Operation successful"`
 }
 
+// ChangePasswordRequest represents the change password request
+// @Description Request to change user password
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required" example:"OldPassword123!"`
+	NewPassword     string `json:"new_password" binding:"required,min=8" example:"NewPassword123!"`
+}

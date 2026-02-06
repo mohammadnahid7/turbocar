@@ -55,6 +55,16 @@ class CarRepository {
     }
   }
 
+  // Increment view count
+  Future<void> incrementView(String id) async {
+    try {
+      await _apiService.incrementView(id);
+    } catch (e) {
+      // Fail silently
+      print('Failed to increment view: $e');
+    }
+  }
+
   // Fetch my listings
   Future<List<CarModel>> fetchMyListings() async {
     try {

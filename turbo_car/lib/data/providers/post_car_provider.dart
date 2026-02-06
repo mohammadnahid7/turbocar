@@ -103,7 +103,7 @@ class PostCarState {
     );
   }
 
-  // Validation
+  // Validation (only required fields)
   bool get isValid {
     return carType.isNotEmpty &&
         carName.isNotEmpty &&
@@ -116,11 +116,7 @@ class PostCarState {
         price != null &&
         price! > 0 &&
         description.length >= 20 &&
-        condition.isNotEmpty &&
-        transmission.isNotEmpty &&
-        color.isNotEmpty &&
         city.isNotEmpty &&
-        state.isNotEmpty &&
         images.isNotEmpty;
   }
 
@@ -204,7 +200,7 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
       // Build form data
       final formData = FormData();
 
-      // Add text fields
+      // Add text fields (only required fields)
       formData.fields.addAll([
         MapEntry('title', state.generatedTitle),
         MapEntry('description', state.description),
@@ -213,19 +209,14 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
         MapEntry('year', state.year.toString()),
         MapEntry('mileage', state.mileage.toString()),
         MapEntry('price', state.price.toString()),
-        MapEntry('condition', state.condition),
-        MapEntry('transmission', state.transmission),
         MapEntry('fuel_type', state.fuelType),
-        MapEntry('color', state.color),
         MapEntry('city', state.city),
-        MapEntry('state', state.state),
-        // Default coordinates (can be updated with location picker later)
-        MapEntry('latitude', '40.7128'),
-        MapEntry('longitude', '-74.0060'),
+        MapEntry('chat_only', state.chatOnly.toString()),
+        // Optional fields are not sent (condition, transmission, color, state, lat, long)
       ]);
 
       // Add images as multipart files
-      // Server will receive these files and return dummy URLs (cloud upload skipped for now)
+      // Server will upload these to S3/R2 storage
       for (final image in state.images) {
         formData.files.add(
           MapEntry(

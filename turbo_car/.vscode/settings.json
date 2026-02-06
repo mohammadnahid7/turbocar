@@ -1,0 +1,5 @@
+{
+    "dart.projectSearchDepth": 5,
+    "dart.flutterSdkPath": null,
+    "dart.runPubGetOnPubspecChanges": "prompt"
+}

@@ -32,8 +32,8 @@ func ValidateUpdateCarRequest(req UpdateCarRequest) error {
 
 // ValidateImages checks file count, size, and type
 func ValidateImages(files []*multipart.FileHeader) error {
-	if len(files) < 3 {
-		return fmt.Errorf("at least 3 images are required")
+	if len(files) < 1 {
+		return fmt.Errorf("at least 1 image is required")
 	}
 	if len(files) > 10 {
 		return fmt.Errorf("maximum 10 images allowed")

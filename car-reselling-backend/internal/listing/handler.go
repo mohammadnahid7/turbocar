@@ -369,3 +369,140 @@ func (h *ListingHandler) GetFavorites(c *gin.Context) {
 		"limit": limit,
 	})
 }
+
+// TestImageUpload handles testing image upload to R2 without authentication
+// @Summary Test image upload to R2
+// @Description Upload a test image to Cloudflare R2 (no auth required - for testing only)
+// @Tags test
+// @Accept multipart/form-data
+// @Produce json
+// @Param image formData file true "Image file to upload"
+// @Success 200 {object} map[string]interface{} "Returns uploaded image URL"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/test/upload [post]
+func (h *ListingHandler) TestImageUpload(c *gin.Context) {
+	// Get the file from form
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "No image file provided",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Validate file size (max 10MB)
+	if file.Size > 10*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "File too large (max 10MB)",
+			"size":  file.Size,
+		})
+		return
+	}
+
+	// Upload using storage service
+	files := []*multipart.FileHeader{file}
+	testID := "test-" + uuid.New().String()[:8]
+
+	urls, err := h.service.storage.UploadMultipleImages(c.Request.Context(), files, testID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to upload image",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"message":  "Image uploaded successfully!",
+		"url":      urls[0],
+		"filename": file.Filename,
+		"size":     file.Size,
+		"test_id":  testID,
+	})
+}
+
+// IncrementView handles incrementing view count
+// @Summary Increment view count
+// @Description Increment the view count for a car listing
+// @Tags listings
+// @Produce json
+// @Param id path string true "Car ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /api/cars/{id}/view [post]
+func (h *ListingHandler) IncrementView(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid car ID"})
+		return
+	}
+
+	h.service.incrementViewCount(c.Request.Context(), id)
+
+	c.JSON(http.StatusOK, gin.H{"message": "View incremented"})
+}
+
+// UploadImage handles image upload for authenticated users
+// @Summary Upload an image
+// @Description Upload an image to Cloudflare R2
+// @Tags common
+// @Security BearerAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param image formData file true "Image file to upload"
+// @Success 200 {object} map[string]interface{} "Returns uploaded image URL"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/upload [post]
+func (h *ListingHandler) UploadImage(c *gin.Context) {
+	// Verify auth
+	userIDStr := c.GetString("userID")
+	if userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Get the file from form
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "No image file provided",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Validate file size (max 10MB)
+	if file.Size > 10*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "File too large (max 10MB)",
+			"size":  file.Size,
+		})
+		return
+	}
+
+	// Upload using storage service
+	files := []*multipart.FileHeader{file}
+	folder := "uploads"
+
+	urls, err := h.service.storage.UploadMultipleImages(c.Request.Context(), files, folder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to upload image",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"message":  "Image uploaded successfully!",
+		"url":      urls[0],
+		"filename": file.Filename,
+	})
+}

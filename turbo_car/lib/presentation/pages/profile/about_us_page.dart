@@ -13,6 +13,7 @@ class AboutUsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).primaryColorDark,
       appBar: CustomAppBar(title: StringConstants.aboutUsTitle),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

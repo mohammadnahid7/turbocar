@@ -28,12 +28,12 @@ func NewService(repo *Repository, cfg *config.Config) *Service {
 
 // Register handles user registration
 func (s *Service) Register(ctx context.Context, req *RegisterRequest) error {
-	// Validate input
+	// Validate input with specific error messages
 	if !utils.ValidateEmail(req.Email) {
-		return appErrors.ErrInvalidCredentials
+		return appErrors.ErrInvalidEmail
 	}
 	if !utils.ValidatePhone(req.Phone) {
-		return appErrors.ErrInvalidCredentials
+		return appErrors.ErrInvalidPhone
 	}
 	if err := utils.ValidatePassword(req.Password); err != nil {
 		return err
@@ -119,7 +119,7 @@ func (s *Service) Login(ctx context.Context, req *LoginRequest) (*AuthResponse, 
 
 	// Store refresh token in Redis (30 days expiry)
 	sessionKey := fmt.Sprintf("session:%s", user.ID.String())
-	if err := database.Set(ctx, sessionKey, refreshToken, 30*24*time.Hour); err != nil {
+	if err := database.Set(ctx, sessionKey, refreshToken, 5*365*24*time.Hour); err != nil {
 		return nil, fmt.Errorf("failed to store session: %w", err)
 	}
 
@@ -142,7 +142,7 @@ func (s *Service) Login(ctx context.Context, req *LoginRequest) (*AuthResponse, 
 func (s *Service) SendOTP(ctx context.Context, phone string) error {
 	// Validate phone format
 	if !utils.ValidatePhone(phone) {
-		return appErrors.ErrInvalidCredentials
+		return appErrors.ErrInvalidPhone
 	}
 
 	// Check rate limiting (max 3 attempts per hour)
@@ -291,8 +291,90 @@ func (s *Service) userToDTO(user *models.User) UserDTO {
 		Email:           user.Email,
 		Phone:           user.Phone,
 		FullName:        user.FullName,
+		Gender:          user.Gender,
+		DOB:             formatTime(user.DOB),
 		ProfilePhotoURL: user.ProfilePhotoURL,
 		IsVerified:      user.IsVerified,
 		IsDealer:        user.IsDealer,
 	}
+}
+
+func formatTime(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format("2006-01-02")
+	return &s
+}
+
+// UpdateProfile updates the user's profile
+func (s *Service) UpdateProfile(ctx context.Context, userID string, req *UpdateProfileRequest) (*UserDTO, error) {
+	// Get user
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update fields if provided
+	if req.FullName != nil {
+		user.FullName = utils.SanitizeString(*req.FullName)
+	}
+	if req.Gender != nil {
+		user.Gender = req.Gender
+	}
+	if req.DOB != nil {
+		dob, err := time.Parse("2006-01-02", *req.DOB)
+		if err == nil {
+			user.DOB = &dob
+		}
+	}
+	if req.ProfilePhotoURL != nil {
+		user.ProfilePhotoURL = req.ProfilePhotoURL
+	}
+
+	// Save updates
+	if err := s.repo.UpdateUser(user); err != nil {
+		return nil, err
+	}
+
+	dto := s.userToDTO(user)
+	return &dto, nil
+}
+
+// ChangePassword changes the user's password
+// Security: Verifies current password, validates new password strength, ensures new != current
+func (s *Service) ChangePassword(ctx context.Context, userID string, req *ChangePasswordRequest) error {
+	// Get user from database
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return appErrors.ErrNotFound
+	}
+
+	// Verify current password (timing-safe comparison via bcrypt)
+	if !utils.CheckPassword(req.CurrentPassword, user.PasswordHash) {
+		return appErrors.ErrCurrentPasswordIncorrect
+	}
+
+	// Validate new password strength
+	if err := utils.ValidatePassword(req.NewPassword); err != nil {
+		return appErrors.ErrWeakPassword
+	}
+
+	// Ensure new password is different from current
+	if utils.CheckPassword(req.NewPassword, user.PasswordHash) {
+		return appErrors.ErrPasswordSameAsCurrent
+	}
+
+	// Hash new password with bcrypt
+	newPasswordHash, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+
+	// Update password in database
+	if err := s.repo.UpdateUserPassword(userID, newPasswordHash); err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	return nil
 }
