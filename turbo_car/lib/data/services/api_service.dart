@@ -3,7 +3,6 @@
 library;
 
 import '../models/car_model.dart';
-import '../models/chat_model.dart';
 import '../models/notification_model.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/network/dio_client.dart';
@@ -19,7 +18,6 @@ class ApiService {
       ApiConstants.cars,
       queryParameters: queryParams,
     );
-    print(response.data);
     return response.data as Map<String, dynamic>;
   }
 
@@ -67,25 +65,7 @@ class ApiService {
   }
 
   Future<void> incrementView(String carId) async {
-    // Fire and forget, or wait? Usually wait but ignore result
     await _dioClient.post('${ApiConstants.cars}/$carId/view');
-  }
-
-  // Chat endpoints
-  Future<List<ChatModel>> getChats() async {
-    final response = await _dioClient.get(ApiConstants.chats);
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data
-        .map((json) => ChatModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<List<ChatModel>> getMessagesWithUser(String userId) async {
-    final response = await _dioClient.get(ApiConstants.chatWithUser(userId));
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data
-        .map((json) => ChatModel.fromJson(json as Map<String, dynamic>))
-        .toList();
   }
 
   // Notification endpoints

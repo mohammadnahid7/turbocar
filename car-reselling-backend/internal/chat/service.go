@@ -45,54 +45,50 @@ func (s *Service) StartConversation(participantIDs []uuid.UUID, carID *uuid.UUID
 	return s.repo.CreateConversation(participantIDs, carID, carTitle, carSellerID, context)
 }
 
-// GetUserConversations retrieves all conversations for a user with last message
+// GetUserConversations retrieves all conversations for a user with last message (optimized)
 func (s *Service) GetUserConversations(userID uuid.UUID) ([]ConversationResponse, error) {
-	conversations, err := s.repo.GetUserConversations(userID)
+	// Use optimized query that fetches everything in one go
+	items, err := s.repo.GetUserConversationsOptimized(userID, 100, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	responses := make([]ConversationResponse, len(conversations))
-	for i, conv := range conversations {
-		// Get last message
-		lastMsg, _ := s.repo.GetLastMessage(conv.ID)
-
-		// Get unread count
-		unreadCount, _ := s.repo.GetUnreadCount(userID, conv.ID)
-
-		// Build participant list
-		participants := make([]ParticipantResponse, len(conv.Participants))
-		for j, p := range conv.Participants {
-			participants[j] = ParticipantResponse{
-				UserID: p.UserID,
-				// Note: FullName and AvatarURL would need to be fetched from users table
-			}
-		}
-
+	responses := make([]ConversationResponse, len(items))
+	for i, item := range items {
 		responses[i] = ConversationResponse{
-			ID:           conv.ID,
-			CarID:        conv.CarID,
-			CarTitle:     conv.CarTitle,
-			Participants: participants,
-			UnreadCount:  int(unreadCount),
-			CreatedAt:    conv.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:    conv.UpdatedAt.Format(time.RFC3339),
-			Metadata:     conv.Metadata,
+			ID:       item.ID,
+			CarID:    item.CarID,
+			CarTitle: item.CarTitle,
+			Participants: []ParticipantResponse{
+				{
+					UserID:    item.OtherUserID,
+					FullName:  item.OtherUserName,
+					AvatarURL: derefString(item.OtherUserAvatar),
+				},
+			},
+			UnreadCount: item.UnreadCount,
+			UpdatedAt:   derefString(item.LastMessageAt),
 		}
 
-		if lastMsg != nil {
+		if item.LastMessageContent != nil {
 			responses[i].LastMessage = &MessageResponse{
-				ID:          lastMsg.ID,
-				SenderID:    lastMsg.SenderID,
-				Content:     lastMsg.Content,
-				MessageType: lastMsg.MessageType,
-				IsRead:      lastMsg.IsRead,
-				CreatedAt:   lastMsg.CreatedAt.Format(time.RFC3339),
+				SenderID:    *item.LastMessageSenderID,
+				Content:     *item.LastMessageContent,
+				MessageType: "text",
+				CreatedAt:   derefString(item.LastMessageTime),
 			}
 		}
 	}
 
 	return responses, nil
+}
+
+// derefString safely dereferences a string pointer
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // --- Message Operations ---

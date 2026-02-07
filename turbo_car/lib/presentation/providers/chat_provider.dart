@@ -12,7 +12,7 @@ import '../../data/repositories/chat_repository.dart';
 import '../../data/services/chat_service.dart';
 import '../../data/services/socket_service.dart';
 import '../../data/providers/auth_provider.dart';
-import '../../core/providers/providers.dart';
+import '../../core/providers/providers.dart'; // Contains storageServiceProvider
 
 // --- Service Providers ---
 
@@ -286,6 +286,30 @@ class ChatConnectionManager {
 
     final repo = _ref.read(chatRepositoryProvider);
     await repo.connectWebSocket(baseUrl, token);
+  }
+
+  /// Connect using token from storage (preferred method)
+  Future<void> connectWithStoredToken(String wsBaseUrl) async {
+    final storageService = _ref.read(storageServiceProvider);
+    final token = await storageService.getToken();
+
+    if (token == null || token.isEmpty) return;
+
+    final repo = _ref.read(chatRepositoryProvider);
+    await repo.connectWebSocket(wsBaseUrl, token);
+
+    // Register FCM device token after successful WebSocket connection
+    // This ensures push notifications work for offline messages
+    try {
+      final fcmToken = await storageService.getFcmToken();
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await repo.registerDevice(fcmToken);
+      }
+    } catch (e) {
+      // FCM registration failure is non-critical, don't block connection
+      // ignore: avoid_print
+      print('FCM registration failed: $e');
+    }
   }
 
   /// Disconnect WebSocket

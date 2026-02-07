@@ -128,7 +128,7 @@ car-reselling-backend/
 
 4. **Test API:**
    ```bash
-   curl http://localhost:8080/health
+   curl http://localhost:3000/health
    ```
 
 See `SETUP.md` for detailed setup instructions.

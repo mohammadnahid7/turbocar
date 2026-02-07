@@ -10,6 +10,10 @@ part 'conversation_model.g.dart';
 @JsonSerializable()
 class ConversationModel {
   final String id;
+  @JsonKey(name: 'car_id')
+  final String? carId;
+  @JsonKey(name: 'car_title')
+  final String? carTitle;
   final List<ParticipantModel> participants;
   @JsonKey(name: 'last_message')
   final MessageModel? lastMessage;
@@ -24,6 +28,8 @@ class ConversationModel {
 
   ConversationModel({
     required this.id,
+    this.carId,
+    this.carTitle,
     required this.participants,
     this.lastMessage,
     this.unreadCount = 0,

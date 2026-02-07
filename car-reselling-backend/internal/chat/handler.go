@@ -41,6 +41,7 @@ func (h *Handler) RegisterRoutes(router *gin.RouterGroup, authMiddleware gin.Han
 		chat.GET("/conversations", h.GetConversations)
 		chat.POST("/conversations", h.StartConversation)
 		chat.GET("/conversations/:id/messages", h.GetMessages)
+		chat.PUT("/conversations/:id/read", h.MarkAsRead)
 		chat.POST("/device", h.RegisterDevice)
 		chat.DELETE("/device", h.UnregisterDevice)
 	}
@@ -120,19 +121,20 @@ func (h *Handler) GetConversations(c *gin.Context) {
 // @Router /chat/conversations [post]
 func (h *Handler) StartConversation(c *gin.Context) {
 	userID := h.getUserID(c)
-	log.Println("User ID: ", userID)
+	log.Println("Nahid: User ID: ", userID)
 	if userID == uuid.Nil {
 		return
 	}
 
 	// Parse request body
 	var req StartConversationRequest
+	log.Println("Nahid: Request: ", req)
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("Error binding JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	log.Println("Nahid Here?")
 	// Include the current user in participants
 	participantIDs := append(req.ParticipantIDs, userID)
 
@@ -184,6 +186,42 @@ func (h *Handler) GetMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, history)
+}
+
+// MarkAsRead marks messages in a conversation as read
+// @Summary Mark messages as read
+// @Tags Chat
+// @Security BearerAuth
+// @Param id path string true "Conversation ID"
+// @Param request body object{message_id=string} true "Message ID to mark as read"
+// @Success 200 {object} object{message=string}
+// @Router /chat/conversations/{id}/read [put]
+func (h *Handler) MarkAsRead(c *gin.Context) {
+	userID := h.getUserID(c)
+	if userID == uuid.Nil {
+		return
+	}
+
+	conversationID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid conversation ID"})
+		return
+	}
+
+	var req struct {
+		MessageID string `json:"message_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.service.MarkAsRead(userID, conversationID, req.MessageID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark messages as read"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Messages marked as read"})
 }
 
 // RegisterDevice stores FCM token for push notifications

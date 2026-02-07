@@ -14,7 +14,7 @@ We use a consistent port mapping strategy:
 
 | Service | Host Port | Container Port | Purpose | Notes |
 |---------|-----------|----------------|---------|-------|
-| **API Server** | `3000` | `8080` | Main API endpoint | Access via http://localhost:3000 |
+| **API Server** | `3000` | `3000` | Main API endpoint | Access via http://localhost:3000 |
 | **PostgreSQL** | `15432` | `5432` | Database | Standard PostgreSQL port in container |
 | **Redis** | `16379` | `6379` | Cache/Sessions | Standard Redis port in container |
 
@@ -92,7 +92,7 @@ These ports are commonly used and should be avoided:
 - `5432` - PostgreSQL (standard, conflicts with local)
 - `6379` - Redis (standard, conflicts with local)
 - `27017` - MongoDB
-- `8080` - Common development (we use 3000 instead)
+- `3000` - Common development (we use 3000 instead)
 - `9000` - PHP-FPM
 - `9200` - Elasticsearch
 

@@ -9,11 +9,11 @@ part of 'conversation_model.dart';
 ConversationModel _$ConversationModelFromJson(Map<String, dynamic> json) =>
     ConversationModel(
       id: json['id'] as String,
-      participants:
-          (json['participants'] as List<dynamic>?)
-              ?.map((e) => ParticipantModel.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      carId: json['car_id'] as String?,
+      carTitle: json['car_title'] as String?,
+      participants: (json['participants'] as List<dynamic>)
+          .map((e) => ParticipantModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
       lastMessage: json['last_message'] == null
           ? null
           : MessageModel.fromJson(json['last_message'] as Map<String, dynamic>),
@@ -26,6 +26,8 @@ ConversationModel _$ConversationModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ConversationModelToJson(ConversationModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'car_id': instance.carId,
+      'car_title': instance.carTitle,
       'participants': instance.participants,
       'last_message': instance.lastMessage,
       'unread_count': instance.unreadCount,

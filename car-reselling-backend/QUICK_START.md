@@ -4,7 +4,7 @@
 
 | Service | Host Port | Container Port | Access URL |
 |---------|-----------|----------------|------------|
-| API | 3000 | 8080 | http://localhost:3000 |
+| API | 3000 | 3000 | http://localhost:3000 |
 | PostgreSQL | 15432 | 5432 | localhost:15432 |
 | Redis | 16379 | 6379 | localhost:16379 |
 
@@ -75,7 +75,7 @@ docker-compose up -d
 ## Important Notes
 
 - **Host ports** (3000, 15432, 16379) are what you use from your machine
-- **Container ports** (8080, 5432, 6379) are internal to Docker network
+- **Container ports** (3000, 5432, 6379) are internal to Docker network
 - Internal services communicate using container names: `postgres:5432`, `redis:6379`
 - External access uses host ports: `localhost:3000`, `localhost:15432`, `localhost:16379`
 

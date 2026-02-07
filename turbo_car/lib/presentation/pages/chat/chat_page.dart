@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/models/conversation_model.dart';
 import '../../../data/services/socket_service.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/string_constants.dart';
 import '../../../core/router/route_names.dart';
 import '../../providers/chat_provider.dart';
@@ -33,11 +34,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _connectWebSocket() async {
-    // TODO: Get token from storage and connect
-    // final connectionManager = ref.read(chatConnectionManagerProvider);
-    // final storageService = ref.read(storageServiceProvider);
-    // final token = await storageService.getToken();
-    // if (token != null) await connectionManager.connect(token);
+    final authState = ref.read(authProvider);
+    if (!authState.isAuthenticated) return;
+
+    final connectionManager = ref.read(chatConnectionManagerProvider);
+    // Use centralized WebSocket URL from ApiConstants
+
+    try {
+      await connectionManager.connectWithStoredToken(ApiConstants.wsBaseUrl);
+    } catch (e) {
+      // Connection error handled by SocketService reconnection logic
+      debugPrint('WebSocket connection error: $e');
+    }
   }
 
   @override
@@ -250,11 +258,29 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             : null,
       ),
       title: Text(
-        otherParticipant?.fullName ?? 'Unknown User',
+        // Show car title if available, otherwise show participant name
+        conversation.carTitle ?? otherParticipant?.fullName ?? 'Chat',
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
-      subtitle: lastMessage != null
-          ? Text(
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Show seller name when car title is displayed
+          if (conversation.carTitle != null &&
+              otherParticipant?.fullName != null)
+            Text(
+              'with ${otherParticipant!.fullName}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          // Show last message or placeholder
+          if (lastMessage != null)
+            Text(
               lastMessage.content,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -264,7 +290,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             )
-          : const Text('No messages yet'),
+          else
+            const Text('No messages yet'),
+        ],
+      ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,

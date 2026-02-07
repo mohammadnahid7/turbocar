@@ -33,7 +33,7 @@ cp .env.example .env
 Edit `.env` with your configuration:
 
 ```env
-SERVER_PORT=8080
+SERVER_PORT=3000
 DATABASE_URL=postgres://postgres:postgres@localhost:15432/car_reselling_db?sslmode=disable
 REDIS_URL=redis://localhost:16379/0
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-min-32-chars
@@ -122,7 +122,7 @@ make build
 ./bin/main
 ```
 
-The server will start on `http://localhost:3000` (when using Docker) or `http://localhost:8080` (when running directly)
+The server will start on `http://localhost:3000` (when using Docker) or `http://localhost:3000` (when running directly)
 
 ## Step 7: Verify Setup
 
@@ -133,7 +133,7 @@ Test the health endpoint:
 curl http://localhost:3000/health
 
 # If running directly
-curl http://localhost:8080/health
+curl http://localhost:3000/health
 ```
 
 Expected response:
@@ -163,7 +163,7 @@ docker-compose down
 ### 1. Register a User
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -178,7 +178,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 ### 2. Verify OTP
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/verify-otp \
+curl -X POST http://localhost:3000/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "phone": "+1234567890",
@@ -189,7 +189,7 @@ curl -X POST http://localhost:8080/api/auth/verify-otp \
 ### 3. Login
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email_or_phone": "test@example.com",
@@ -202,7 +202,7 @@ Save the `access_token` from the response.
 ### 4. Get Current User
 
 ```bash
-curl -X GET http://localhost:8080/api/auth/me \
+curl -X GET http://localhost:3000/api/auth/me \
   -H "Authorization: Bearer <your_access_token>"
 ```
 
@@ -222,7 +222,7 @@ curl -X GET http://localhost:8080/api/auth/me \
 ### Port Already in Use
 
 - Change `SERVER_PORT` in `.env` to a different port
-- Or stop the process using port 8080
+- Or stop the process using port 3000
 
 ### Migration Errors
 

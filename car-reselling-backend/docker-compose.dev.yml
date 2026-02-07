@@ -33,12 +33,15 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: car-reselling-api
     ports:
-      - "3000:3000" # Host:Container - Use 3000 to avoid conflicts, container uses 3000
+      - "3000:8080" # Host:Container - Use 3000 to avoid conflicts, container uses 8080
+    volumes:
+      - .:/app # Mount source code for hot-reloading
+      - go-modules:/go/pkg/mod # Cache Go modules
     environment:
-      SERVER_PORT: 3000
+      SERVER_PORT: 8080
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/car_reselling_db?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
@@ -63,5 +66,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
-
-
+  go-modules:

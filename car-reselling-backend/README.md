@@ -51,7 +51,7 @@ go run cmd/api/main.go
 ## Port Configuration
 
 **Important:** This project uses non-standard ports to avoid conflicts:
-- **API Server:** `http://localhost:3000` (Docker) or `http://localhost:8080` (direct)
+- **API Server:** `http://localhost:3000` (Docker) or `http://localhost:3000` (direct)
 - **PostgreSQL:** Port `15432` (host) → `5432` (container)
 - **Redis:** Port `16379` (host) → `6379` (container)
 
@@ -63,7 +63,7 @@ See `PORTS.md` for complete port documentation.
 
 **Access the interactive Swagger documentation at:**
 - **http://localhost:3000/swagger/index.html** (Docker)
-- **http://localhost:8080/swagger/index.html** (direct)
+- **http://localhost:3000/swagger/index.html** (direct)
 
 Swagger UI provides:
 - ✅ Interactive API testing directly in your browser
@@ -76,7 +76,7 @@ See `SWAGGER_GUIDE.md` for detailed usage instructions.
 
 ### API Endpoints
 
-Base URL: `http://localhost:3000` (Docker) or `http://localhost:8080` (direct)
+Base URL: `http://localhost:3000` (Docker) or `http://localhost:3000` (direct)
 
 #### Authentication
 

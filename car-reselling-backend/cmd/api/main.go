@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	cors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -31,7 +32,7 @@ import (
 // @license.name  MIT
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8080
+// @host      localhost:3000
 // @BasePath  /
 
 // @securityDefinitions.apikey BearerAuth
@@ -95,24 +96,17 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 
-	// CORS middleware - MUST be before other middleware to handle preflight OPTIONS
-	r.Use(func(c *gin.Context) {
-		origin := c.Request.Header.Get("Origin")
-		if origin == "" {
-			origin = "*"
-		}
-		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
+	// CORS middleware
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:3000"} // Add your frontend/swagger origins here
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"}
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.AllowCredentials = true
+	config.AllowOriginFunc = func(origin string) bool {
+		return cfg.Environment == "development" // Allow all origins in development
+	}
+	r.Use(cors.New(config))
 
 	// Rate limiting (exclude Swagger UI and health check)
 	r.Use(func(c *gin.Context) {

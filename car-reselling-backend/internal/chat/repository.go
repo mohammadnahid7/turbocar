@@ -61,7 +61,7 @@ func (r *Repository) GetConversationByID(id uuid.UUID) (*Conversation, error) {
 	return &conv, err
 }
 
-// GetUserConversations retrieves all conversations for a user
+// GetUserConversations retrieves all conversations for a user (legacy - use GetUserConversationsOptimized)
 func (r *Repository) GetUserConversations(userID uuid.UUID) ([]Conversation, error) {
 	var conversations []Conversation
 
@@ -69,10 +69,69 @@ func (r *Repository) GetUserConversations(userID uuid.UUID) ([]Conversation, err
 		Joins("JOIN conversation_participants cp ON cp.conversation_id = conversations.id").
 		Where("cp.user_id = ?", userID).
 		Preload("Participants").
-		Order("updated_at DESC").
+		Order("COALESCE(last_message_at, updated_at) DESC").
 		Find(&conversations).Error
 
 	return conversations, err
+}
+
+// ConversationListItem is the result struct for the optimized conversation list query
+type ConversationListItem struct {
+	ID                  uuid.UUID  `json:"id"`
+	CarID               *uuid.UUID `json:"car_id,omitempty"`
+	CarTitle            string     `json:"car_title,omitempty"`
+	LastMessageAt       *string    `json:"last_message_at,omitempty"`
+	UnreadCount         int        `json:"unread_count"`
+	OtherUserID         uuid.UUID  `json:"other_user_id"`
+	OtherUserName       string     `json:"other_user_name"`
+	OtherUserAvatar     *string    `json:"other_user_avatar,omitempty"`
+	LastMessageContent  *string    `json:"last_message_content,omitempty"`
+	LastMessageSenderID *uuid.UUID `json:"last_message_sender_id,omitempty"`
+	LastMessageTime     *string    `json:"last_message_time,omitempty"`
+}
+
+// GetUserConversationsOptimized retrieves all conversations with last message & unread count in ONE query
+func (r *Repository) GetUserConversationsOptimized(userID uuid.UUID, limit, offset int) ([]ConversationListItem, error) {
+	var results []ConversationListItem
+
+	// Single optimized query using LATERAL JOIN for last message
+	err := r.db.Raw(`
+		SELECT 
+			c.id,
+			c.car_id,
+			c.car_title,
+			TO_CHAR(c.last_message_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_message_at,
+			-- Unread count: messages not sent by this user and not read
+			(SELECT COUNT(*) FROM messages m 
+			 WHERE m.conversation_id = c.id 
+			   AND m.sender_id != $1 
+			   AND m.is_read = false) as unread_count,
+			-- Other participant info
+			other_cp.user_id as other_user_id,
+			u.full_name as other_user_name,
+			u.profile_photo_url as other_user_avatar,
+			-- Last message info via LATERAL
+			lm.content as last_message_content,
+			lm.sender_id as last_message_sender_id,
+			TO_CHAR(lm.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as last_message_time
+		FROM conversations c
+		INNER JOIN conversation_participants cp 
+			ON cp.conversation_id = c.id AND cp.user_id = $1
+		INNER JOIN conversation_participants other_cp 
+			ON other_cp.conversation_id = c.id AND other_cp.user_id != $1
+		LEFT JOIN users u ON u.id = other_cp.user_id
+		LEFT JOIN LATERAL (
+			SELECT content, sender_id, created_at
+			FROM messages
+			WHERE conversation_id = c.id
+			ORDER BY created_at DESC
+			LIMIT 1
+		) lm ON true
+		ORDER BY COALESCE(c.last_message_at, c.updated_at) DESC
+		LIMIT $2 OFFSET $3
+	`, userID, limit, offset).Scan(&results).Error
+
+	return results, err
 }
 
 // GetConversationBetweenUsers finds existing conversation between users for a specific car
@@ -115,17 +174,21 @@ func (r *Repository) GetParticipantIDs(conversationID uuid.UUID) ([]uuid.UUID, e
 
 // --- Message Operations ---
 
-// SaveMessage persists a message to the database
+// SaveMessage persists a message to the database and updates conversation timestamps
 func (r *Repository) SaveMessage(msg *Message) error {
-	err := r.db.Create(msg).Error
-	if err != nil {
-		return err
-	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(msg).Error; err != nil {
+			return err
+		}
 
-	// Update conversation's updated_at
-	return r.db.Model(&Conversation{}).
-		Where("id = ?", msg.ConversationID).
-		Update("updated_at", msg.CreatedAt).Error
+		// Update conversation's last_message_at and updated_at atomically
+		return tx.Model(&Conversation{}).
+			Where("id = ?", msg.ConversationID).
+			Updates(map[string]interface{}{
+				"last_message_at": msg.CreatedAt,
+				"updated_at":      msg.CreatedAt,
+			}).Error
+	})
 }
 
 // GetMessages retrieves paginated messages for a conversation
