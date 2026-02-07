@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -119,12 +120,15 @@ func (h *Handler) GetConversations(c *gin.Context) {
 // @Router /chat/conversations [post]
 func (h *Handler) StartConversation(c *gin.Context) {
 	userID := h.getUserID(c)
+	log.Println("User ID: ", userID)
 	if userID == uuid.Nil {
 		return
 	}
 
+	// Parse request body
 	var req StartConversationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("Error binding JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -132,8 +136,9 @@ func (h *Handler) StartConversation(c *gin.Context) {
 	// Include the current user in participants
 	participantIDs := append(req.ParticipantIDs, userID)
 
-	conversation, err := h.service.StartConversation(participantIDs, req.Context)
+	conversation, err := h.service.StartConversation(participantIDs, req.CarID, req.CarTitle, req.Context)
 	if err != nil {
+		log.Printf("Error creating conversation: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation"})
 		return
 	}

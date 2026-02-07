@@ -1,5 +1,6 @@
 package listing
 
+// sda
 import (
 	"time"
 
@@ -52,7 +53,7 @@ type Car struct {
 	FuelType     string         `json:"fuel_type" db:"fuel_type"`
 	Color        string         `json:"color" db:"color"`
 	VIN          string         `json:"vin" db:"vin"`
-	Images       pq.StringArray `json:"images" gorm:"type:text[]"`
+	Images       pq.StringArray `json:"images" gorm:"type:text[]" swaggertype:"array,string"`
 	City         string         `json:"city" gorm:"column:city"`
 	State        string         `json:"state" gorm:"column:state"`
 	Latitude     float64        `json:"latitude" gorm:"-"`  // Computed from PostGIS, not stored

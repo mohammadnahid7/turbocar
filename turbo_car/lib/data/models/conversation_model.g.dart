@@ -9,15 +9,18 @@ part of 'conversation_model.dart';
 ConversationModel _$ConversationModelFromJson(Map<String, dynamic> json) =>
     ConversationModel(
       id: json['id'] as String,
-      participants: (json['participants'] as List<dynamic>)
-          .map((e) => ParticipantModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      participants:
+          (json['participants'] as List<dynamic>?)
+              ?.map((e) => ParticipantModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       lastMessage: json['last_message'] == null
           ? null
           : MessageModel.fromJson(json['last_message'] as Map<String, dynamic>),
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at'] as String,
       updatedAt: json['updated_at'] as String,
+      metadata: json['metadata'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$ConversationModelToJson(ConversationModel instance) =>
@@ -28,6 +31,7 @@ Map<String, dynamic> _$ConversationModelToJson(ConversationModel instance) =>
       'unread_count': instance.unreadCount,
       'created_at': instance.createdAt,
       'updated_at': instance.updatedAt,
+      'metadata': instance.metadata,
     };
 
 ParticipantModel _$ParticipantModelFromJson(Map<String, dynamic> json) =>

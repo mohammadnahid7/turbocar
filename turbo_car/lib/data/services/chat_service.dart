@@ -13,19 +13,21 @@ class ChatService {
 
   /// Get all conversations for the current user
   Future<List<ConversationModel>> getConversations() async {
-    final response = await _dio.get('/api/chat/conversations');
+    final response = await _dio.get('/chat/conversations');
     final List<dynamic> data = response.data;
     return data.map((json) => ConversationModel.fromJson(json)).toList();
   }
 
   /// Start a new conversation with specified users
   Future<ConversationModel> startConversation(
-    List<String> participantIds,
-  ) async {
-    final response = await _dio.post(
-      '/api/chat/conversations',
-      data: {'participant_ids': participantIds},
-    );
+    List<String> participantIds, {
+    Map<String, dynamic>? context,
+  }) async {
+    final data = <String, dynamic>{'participant_ids': participantIds};
+    if (context != null) {
+      data['context'] = context;
+    }
+    final response = await _dio.post('/chat/conversations', data: data);
     return ConversationModel.fromJson(response.data);
   }
 
@@ -36,7 +38,7 @@ class ChatService {
     int pageSize = 50,
   }) async {
     final response = await _dio.get(
-      '/api/chat/conversations/$conversationId/messages',
+      '/chat/conversations/$conversationId/messages',
       queryParameters: {'page': page, 'page_size': pageSize},
     );
     return ChatHistoryResponse.fromJson(response.data);
@@ -48,14 +50,14 @@ class ChatService {
     String deviceType = 'android',
   }) async {
     await _dio.post(
-      '/api/chat/device',
+      '/chat/device',
       data: {'fcm_token': fcmToken, 'device_type': deviceType},
     );
   }
 
   /// Unregister FCM device token
   Future<void> unregisterDevice(String fcmToken) async {
-    await _dio.delete('/api/chat/device', data: {'fcm_token': fcmToken});
+    await _dio.delete('/chat/device', data: {'fcm_token': fcmToken});
   }
 }
 

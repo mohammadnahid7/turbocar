@@ -16,8 +16,10 @@ type SendMessageRequest struct {
 
 // StartConversationRequest creates a new conversation
 type StartConversationRequest struct {
-	ParticipantIDs []uuid.UUID            `json:"participant_ids" binding:"required,min=1"`
-	Context        map[string]interface{} `json:"context,omitempty"`
+	ParticipantIDs []uuid.UUID `json:"participant_ids" binding:"required,min=1"`
+	CarID          *uuid.UUID  `json:"car_id,omitempty"`
+	CarTitle       string      `json:"car_title,omitempty"`
+	Context        Metadata    `json:"context,omitempty"`
 }
 
 // MarkAsReadRequest marks messages as read
@@ -30,13 +32,15 @@ type MarkAsReadRequest struct {
 
 // ConversationResponse is the API response for a conversation
 type ConversationResponse struct {
-	ID           uuid.UUID              `json:"id"`
-	Participants []ParticipantResponse  `json:"participants"`
-	LastMessage  *MessageResponse       `json:"last_message,omitempty"`
-	UnreadCount  int                    `json:"unread_count"`
-	CreatedAt    string                 `json:"created_at"`
-	UpdatedAt    string                 `json:"updated_at"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	ID           uuid.UUID             `json:"id"`
+	CarID        *uuid.UUID            `json:"car_id,omitempty"`
+	CarTitle     string                `json:"car_title,omitempty"`
+	Participants []ParticipantResponse `json:"participants"`
+	LastMessage  *MessageResponse      `json:"last_message,omitempty"`
+	UnreadCount  int                   `json:"unread_count"`
+	CreatedAt    string                `json:"created_at"`
+	UpdatedAt    string                `json:"updated_at"`
+	Metadata     Metadata              `json:"metadata,omitempty"`
 }
 
 // ParticipantResponse represents a user in a conversation

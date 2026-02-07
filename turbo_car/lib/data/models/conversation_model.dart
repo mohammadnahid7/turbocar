@@ -17,8 +17,10 @@ class ConversationModel {
   final int unreadCount;
   @JsonKey(name: 'created_at')
   final String createdAt;
+
   @JsonKey(name: 'updated_at')
   final String updatedAt;
+  final Map<String, dynamic>? metadata;
 
   ConversationModel({
     required this.id,
@@ -26,7 +28,9 @@ class ConversationModel {
     this.lastMessage,
     this.unreadCount = 0,
     required this.createdAt,
+
     required this.updatedAt,
+    this.metadata,
   });
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) =>

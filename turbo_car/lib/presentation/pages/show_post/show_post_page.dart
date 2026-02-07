@@ -10,9 +10,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers/providers.dart';
+import '../../../core/router/route_names.dart';
 import '../../../data/providers/car_details_provider.dart';
 import '../../../data/providers/saved_cars_provider.dart';
 import '../../../data/models/car_model.dart';
+import '../../providers/chat_provider.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
 class ShowPostPage extends ConsumerStatefulWidget {
@@ -558,12 +561,7 @@ class _ShowPostPageState extends ConsumerState<ShowPostPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
-                  // TODO: Navigate to chat with seller
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chat feature coming soon!')),
-                  );
-                },
+                onPressed: () => _handleChatButtonPressed(car),
               ),
             ),
             // Call Button (Show only if not chat-only)
@@ -581,8 +579,8 @@ class _ShowPostPageState extends ConsumerState<ShowPostPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: car.sellerPhone != null
-                      ? () => _makePhoneCall(car.sellerPhone!)
+                  onPressed: car.seller?.phone != null
+                      ? () => _makePhoneCall(car.seller!.phone!)
                       : null,
                 ),
               ),
@@ -591,6 +589,59 @@ class _ShowPostPageState extends ConsumerState<ShowPostPage> {
         ),
       ),
     );
+  }
+
+  // Handle Chat Button Press
+  Future<void> _handleChatButtonPressed(CarModel car) async {
+    // Check authentication
+    final authState = ref.read(authProvider);
+    if (!authState.isAuthenticated) {
+      // Navigate to login if not authenticated
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to chat with the seller')),
+      );
+      context.push(RouteNames.login);
+      return;
+    }
+
+    if (car.seller == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seller information not available')),
+        );
+      }
+      return;
+    }
+
+    // Show loading
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    try {
+      print("Seller ID: ${car.seller!.id}");
+      final conversationsNotifier = ref.read(conversationsProvider.notifier);
+      final conversation = await conversationsNotifier.startConversation(
+        [car.seller!.id],
+        context: {'car_id': car.id, 'car_title': car.title},
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        context.push('/chat/${conversation.id}');
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to start chat: $e')));
+      }
+    }
   }
 
   // Error State

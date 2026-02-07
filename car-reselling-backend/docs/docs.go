@@ -24,6 +24,57 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/change-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Change the authenticated user's password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Password change data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "description": "Login with email/phone and password",
@@ -44,7 +95,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.LoginRequest"
+                            "$ref": "#/definitions/auth.LoginRequest"
                         }
                     }
                 ],
@@ -52,25 +103,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.AuthResponse"
+                            "$ref": "#/definitions/auth.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -95,13 +146,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.MessageResponse"
+                            "$ref": "#/definitions/auth.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -126,13 +177,62 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.UserDTO"
+                            "$ref": "#/definitions/auth.UserDTO"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the current authenticated user's profile information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update profile",
+                "parameters": [
+                    {
+                        "description": "Profile update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.UserDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -158,7 +258,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.RefreshTokenRequest"
+                            "$ref": "#/definitions/auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -175,13 +275,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -207,7 +307,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.RegisterRequest"
+                            "$ref": "#/definitions/auth.RegisterRequest"
                         }
                     }
                 ],
@@ -215,19 +315,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.MessageResponse"
+                            "$ref": "#/definitions/auth.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -253,7 +353,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.SendOTPRequest"
+                            "$ref": "#/definitions/auth.SendOTPRequest"
                         }
                     }
                 ],
@@ -261,19 +361,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.MessageResponse"
+                            "$ref": "#/definitions/auth.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -299,7 +399,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.VerifyOTPRequest"
+                            "$ref": "#/definitions/auth.VerifyOTPRequest"
                         }
                     }
                 ],
@@ -307,70 +407,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.MessageResponse"
+                            "$ref": "#/definitions/auth.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/test/upload": {
-            "post": {
-                "description": "Upload a test image to Cloudflare R2 (no auth required - for testing only)",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "test"
-                ],
-                "summary": "Test image upload to R2",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Image file to upload",
-                        "name": "image",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Returns uploaded image URL",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/auth.ErrorResponse"
                         }
                     }
                 }
@@ -539,15 +588,17 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Condition (optional: excellent, good, fair)",
+                        "description": "Condition",
                         "name": "condition",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Transmission (optional: automatic, manual)",
+                        "description": "Transmission",
                         "name": "transmission",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "string",
@@ -558,9 +609,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Color (optional)",
+                        "description": "Color",
                         "name": "color",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "string",
@@ -577,21 +629,24 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "State (optional)",
+                        "description": "State",
                         "name": "state",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "number",
-                        "description": "Latitude (optional)",
+                        "description": "Latitude",
                         "name": "latitude",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "number",
-                        "description": "Longitude (optional)",
+                        "description": "Longitude",
                         "name": "longitude",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "file",
@@ -605,7 +660,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_listing.Car"
+                            "$ref": "#/definitions/listing.Car"
                         }
                     },
                     "400": {
@@ -759,7 +814,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_listing.CarResponse"
+                            "$ref": "#/definitions/listing.CarResponse"
                         }
                     },
                     "400": {
@@ -836,7 +891,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_listing.Car"
+                            "$ref": "#/definitions/listing.Car"
                         }
                     },
                     "400": {
@@ -964,10 +1019,375 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/cars/{id}/view": {
+            "post": {
+                "description": "Increment the view count for a car listing",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "listings"
+                ],
+                "summary": "Increment view count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Car ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/test/upload": {
+            "post": {
+                "description": "Upload a test image to Cloudflare R2 (no auth required - for testing only)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "test"
+                ],
+                "summary": "Test image upload to R2",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file to upload",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns uploaded image URL",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload an image to Cloudflare R2",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "common"
+                ],
+                "summary": "Upload an image",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file to upload",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns uploaded image URL",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/conversations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get user's conversations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/chat.ConversationResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Start a new conversation",
+                "parameters": [
+                    {
+                        "description": "Participant IDs",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/chat.StartConversationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/chat.Conversation"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/conversations/{id}/messages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get chat history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Conversation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chat.ChatHistoryResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/device": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Register device for push notifications",
+                "parameters": [
+                    {
+                        "description": "Device info",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "device_type": {
+                                    "type": "string"
+                                },
+                                "fcm_token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Unregister device from push notifications",
+                "parameters": [
+                    {
+                        "description": "FCM token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "fcm_token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/chat/ws": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Connect to chat WebSocket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token for authentication",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "internal_auth.AuthResponse": {
+        "auth.AuthResponse": {
             "description": "Authentication response with tokens and user data",
             "type": "object",
             "properties": {
@@ -980,11 +1400,30 @@ const docTemplate = `{
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 },
                 "user": {
-                    "$ref": "#/definitions/internal_auth.UserDTO"
+                    "$ref": "#/definitions/auth.UserDTO"
                 }
             }
         },
-        "internal_auth.ErrorResponse": {
+        "auth.ChangePasswordRequest": {
+            "description": "Request to change user password",
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string",
+                    "example": "OldPassword123!"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "NewPassword123!"
+                }
+            }
+        },
+        "auth.ErrorResponse": {
             "description": "Error response structure",
             "type": "object",
             "properties": {
@@ -998,7 +1437,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.LoginRequest": {
+        "auth.LoginRequest": {
             "description": "Login request with email/phone and password",
             "type": "object",
             "required": [
@@ -1016,7 +1455,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.MessageResponse": {
+        "auth.MessageResponse": {
             "description": "Simple message response",
             "type": "object",
             "properties": {
@@ -1026,7 +1465,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.RefreshTokenRequest": {
+        "auth.RefreshTokenRequest": {
             "description": "Request to refresh access token",
             "type": "object",
             "required": [
@@ -1039,7 +1478,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.RegisterRequest": {
+        "auth.RegisterRequest": {
             "description": "Registration request with user details",
             "type": "object",
             "required": [
@@ -1049,6 +1488,10 @@ const docTemplate = `{
                 "phone"
             ],
             "properties": {
+                "dob": {
+                    "type": "string",
+                    "example": "1990-01-01"
+                },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
@@ -1056,6 +1499,10 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string",
                     "example": "John Doe"
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "male"
                 },
                 "password": {
                     "type": "string",
@@ -1068,7 +1515,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.SendOTPRequest": {
+        "auth.SendOTPRequest": {
             "description": "Request to send OTP to phone number",
             "type": "object",
             "required": [
@@ -1081,10 +1528,36 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.UserDTO": {
+        "auth.UpdateProfileRequest": {
+            "description": "Request to update user profile",
+            "type": "object",
+            "properties": {
+                "dob": {
+                    "type": "string",
+                    "example": "1990-01-01"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "male"
+                },
+                "profile_photo_url": {
+                    "type": "string",
+                    "example": "https://example.com/photo.jpg"
+                }
+            }
+        },
+        "auth.UserDTO": {
             "description": "User information in API responses",
             "type": "object",
             "properties": {
+                "dob": {
+                    "type": "string",
+                    "example": "1990-01-01T00:00:00Z"
+                },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
@@ -1092,6 +1565,10 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string",
                     "example": "John Doe"
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "male"
                 },
                 "id": {
                     "type": "string",
@@ -1115,7 +1592,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.VerifyOTPRequest": {
+        "auth.VerifyOTPRequest": {
             "description": "Request to verify OTP code",
             "type": "object",
             "required": [
@@ -1133,9 +1610,205 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_listing.Car": {
+        "chat.ChatHistoryResponse": {
             "type": "object",
             "properties": {
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/chat.MessageResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "chat.Conversation": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/chat.Message"
+                    }
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "participants": {
+                    "description": "Relations",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/chat.ConversationParticipant"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "chat.ConversationParticipant": {
+            "type": "object",
+            "properties": {
+                "conversation_id": {
+                    "type": "string"
+                },
+                "joined_at": {
+                    "type": "string"
+                },
+                "last_read_message_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "chat.ConversationResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_message": {
+                    "$ref": "#/definitions/chat.MessageResponse"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/chat.ParticipantResponse"
+                    }
+                },
+                "unread_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "chat.Message": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "conversation_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "media_url": {
+                    "type": "string"
+                },
+                "message_type": {
+                    "description": "text, image, file",
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "chat.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "conversation_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "media_url": {
+                    "type": "string"
+                },
+                "message_type": {
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "string"
+                },
+                "sender_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "chat.ParticipantResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "chat.StartConversationRequest": {
+            "type": "object",
+            "required": [
+                "participant_ids"
+            ],
+            "properties": {
+                "context": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "participant_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "listing.Car": {
+            "type": "object",
+            "properties": {
+                "chat_only": {
+                    "type": "boolean"
+                },
                 "city": {
                     "type": "string"
                 },
@@ -1170,11 +1843,11 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "latitude": {
-                    "description": "Computed from PostGIS",
+                    "description": "Computed from PostGIS, not stored",
                     "type": "number"
                 },
                 "longitude": {
-                    "description": "Computed from PostGIS",
+                    "description": "Computed from PostGIS, not stored",
                     "type": "number"
                 },
                 "make": {
@@ -1189,18 +1862,16 @@ const docTemplate = `{
                 "price": {
                     "type": "number"
                 },
+                "seller": {
+                    "description": "Joins/Extras - populated via JOIN queries, not stored in cars table",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/listing.SellerInfo"
+                        }
+                    ]
+                },
                 "seller_id": {
                     "type": "string"
-                },
-                "seller_name": {
-                    "description": "Joins/Extras",
-                    "type": "string"
-                },
-                "seller_photo": {
-                    "type": "string"
-                },
-                "seller_rating": {
-                    "type": "number"
                 },
                 "state": {
                     "type": "string"
@@ -1228,10 +1899,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_listing.CarResponse": {
+        "listing.CarResponse": {
             "description": "Detailed car information response",
             "type": "object",
             "properties": {
+                "chat_only": {
+                    "type": "boolean"
+                },
                 "city": {
                     "type": "string"
                 },
@@ -1274,11 +1948,11 @@ const docTemplate = `{
                     "example": true
                 },
                 "latitude": {
-                    "description": "Computed from PostGIS",
+                    "description": "Computed from PostGIS, not stored",
                     "type": "number"
                 },
                 "longitude": {
-                    "description": "Computed from PostGIS",
+                    "description": "Computed from PostGIS, not stored",
                     "type": "number"
                 },
                 "make": {
@@ -1293,18 +1967,16 @@ const docTemplate = `{
                 "price": {
                     "type": "number"
                 },
+                "seller": {
+                    "description": "Joins/Extras - populated via JOIN queries, not stored in cars table",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/listing.SellerInfo"
+                        }
+                    ]
+                },
                 "seller_id": {
                     "type": "string"
-                },
-                "seller_name": {
-                    "description": "Joins/Extras",
-                    "type": "string"
-                },
-                "seller_photo": {
-                    "type": "string"
-                },
-                "seller_rating": {
-                    "type": "number"
                 },
                 "state": {
                     "type": "string"
@@ -1331,6 +2003,23 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "listing.SellerInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profile_photo": {
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -1346,7 +2035,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:3000",
+	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Car Reselling Backend API",

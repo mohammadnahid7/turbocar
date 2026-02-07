@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  internal_auth.AuthResponse:
+  auth.AuthResponse:
     description: Authentication response with tokens and user data
     properties:
       access_token:
@@ -10,9 +10,23 @@ definitions:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
       user:
-        $ref: '#/definitions/internal_auth.UserDTO'
+        $ref: '#/definitions/auth.UserDTO'
     type: object
-  internal_auth.ErrorResponse:
+  auth.ChangePasswordRequest:
+    description: Request to change user password
+    properties:
+      current_password:
+        example: OldPassword123!
+        type: string
+      new_password:
+        example: NewPassword123!
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  auth.ErrorResponse:
     description: Error response structure
     properties:
       error:
@@ -22,7 +36,7 @@ definitions:
         example: Invalid input data
         type: string
     type: object
-  internal_auth.LoginRequest:
+  auth.LoginRequest:
     description: Login request with email/phone and password
     properties:
       email_or_phone:
@@ -35,14 +49,14 @@ definitions:
     - email_or_phone
     - password
     type: object
-  internal_auth.MessageResponse:
+  auth.MessageResponse:
     description: Simple message response
     properties:
       message:
         example: Operation successful
         type: string
     type: object
-  internal_auth.RefreshTokenRequest:
+  auth.RefreshTokenRequest:
     description: Request to refresh access token
     properties:
       refresh_token:
@@ -51,14 +65,20 @@ definitions:
     required:
     - refresh_token
     type: object
-  internal_auth.RegisterRequest:
+  auth.RegisterRequest:
     description: Registration request with user details
     properties:
+      dob:
+        example: "1990-01-01"
+        type: string
       email:
         example: user@example.com
         type: string
       full_name:
         example: John Doe
+        type: string
+      gender:
+        example: male
         type: string
       password:
         example: SecurePass123
@@ -73,7 +93,7 @@ definitions:
     - password
     - phone
     type: object
-  internal_auth.SendOTPRequest:
+  auth.SendOTPRequest:
     description: Request to send OTP to phone number
     properties:
       phone:
@@ -82,14 +102,36 @@ definitions:
     required:
     - phone
     type: object
-  internal_auth.UserDTO:
+  auth.UpdateProfileRequest:
+    description: Request to update user profile
+    properties:
+      dob:
+        example: "1990-01-01"
+        type: string
+      full_name:
+        example: John Doe
+        type: string
+      gender:
+        example: male
+        type: string
+      profile_photo_url:
+        example: https://example.com/photo.jpg
+        type: string
+    type: object
+  auth.UserDTO:
     description: User information in API responses
     properties:
+      dob:
+        example: "1990-01-01T00:00:00Z"
+        type: string
       email:
         example: user@example.com
         type: string
       full_name:
         example: John Doe
+        type: string
+      gender:
+        example: male
         type: string
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
@@ -107,7 +149,7 @@ definitions:
         example: https://example.com/photo.jpg
         type: string
     type: object
-  internal_auth.VerifyOTPRequest:
+  auth.VerifyOTPRequest:
     description: Request to verify OTP code
     properties:
       code:
@@ -120,8 +162,138 @@ definitions:
     - code
     - phone
     type: object
-  internal_listing.Car:
+  chat.ChatHistoryResponse:
     properties:
+      messages:
+        items:
+          $ref: '#/definitions/chat.MessageResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  chat.Conversation:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/chat.Message'
+        type: array
+      metadata:
+        additionalProperties: true
+        type: object
+      participants:
+        description: Relations
+        items:
+          $ref: '#/definitions/chat.ConversationParticipant'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  chat.ConversationParticipant:
+    properties:
+      conversation_id:
+        type: string
+      joined_at:
+        type: string
+      last_read_message_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  chat.ConversationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      last_message:
+        $ref: '#/definitions/chat.MessageResponse'
+      metadata:
+        additionalProperties: true
+        type: object
+      participants:
+        items:
+          $ref: '#/definitions/chat.ParticipantResponse'
+        type: array
+      unread_count:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  chat.Message:
+    properties:
+      content:
+        type: string
+      conversation_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_read:
+        type: boolean
+      media_url:
+        type: string
+      message_type:
+        description: text, image, file
+        type: string
+      sender_id:
+        type: string
+    type: object
+  chat.MessageResponse:
+    properties:
+      content:
+        type: string
+      conversation_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_read:
+        type: boolean
+      media_url:
+        type: string
+      message_type:
+        type: string
+      sender_id:
+        type: string
+      sender_name:
+        type: string
+    type: object
+  chat.ParticipantResponse:
+    properties:
+      avatar_url:
+        type: string
+      full_name:
+        type: string
+      user_id:
+        type: string
+    type: object
+  chat.StartConversationRequest:
+    properties:
+      context:
+        additionalProperties: true
+        type: object
+      participant_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - participant_ids
+    type: object
+  listing.Car:
+    properties:
+      chat_only:
+        type: boolean
       city:
         type: string
       color:
@@ -145,10 +317,10 @@ definitions:
       is_featured:
         type: boolean
       latitude:
-        description: Computed from PostGIS
+        description: Computed from PostGIS, not stored
         type: number
       longitude:
-        description: Computed from PostGIS
+        description: Computed from PostGIS, not stored
         type: number
       make:
         type: string
@@ -158,15 +330,13 @@ definitions:
         type: string
       price:
         type: number
+      seller:
+        allOf:
+        - $ref: '#/definitions/listing.SellerInfo'
+        description: Joins/Extras - populated via JOIN queries, not stored in cars
+          table
       seller_id:
         type: string
-      seller_name:
-        description: Joins/Extras
-        type: string
-      seller_photo:
-        type: string
-      seller_rating:
-        type: number
       state:
         type: string
       status:
@@ -184,9 +354,11 @@ definitions:
       year:
         type: integer
     type: object
-  internal_listing.CarResponse:
+  listing.CarResponse:
     description: Detailed car information response
     properties:
+      chat_only:
+        type: boolean
       city:
         type: string
       color:
@@ -216,10 +388,10 @@ definitions:
         example: true
         type: boolean
       latitude:
-        description: Computed from PostGIS
+        description: Computed from PostGIS, not stored
         type: number
       longitude:
-        description: Computed from PostGIS
+        description: Computed from PostGIS, not stored
         type: number
       make:
         type: string
@@ -229,15 +401,13 @@ definitions:
         type: string
       price:
         type: number
+      seller:
+        allOf:
+        - $ref: '#/definitions/listing.SellerInfo'
+        description: Joins/Extras - populated via JOIN queries, not stored in cars
+          table
       seller_id:
         type: string
-      seller_name:
-        description: Joins/Extras
-        type: string
-      seller_photo:
-        type: string
-      seller_rating:
-        type: number
       state:
         type: string
       status:
@@ -255,7 +425,18 @@ definitions:
       year:
         type: integer
     type: object
-host: localhost:3000
+  listing.SellerInfo:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      profile_photo:
+        type: string
+    type: object
+host: localhost:8080
 info:
   contact:
     email: support@example.com
@@ -269,6 +450,38 @@ info:
   title: Car Reselling Backend API
   version: "1.0"
 paths:
+  /api/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change the authenticated user's password
+      parameters:
+      - description: Password change data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - auth
   /api/auth/login:
     post:
       consumes:
@@ -280,26 +493,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.LoginRequest'
+          $ref: '#/definitions/auth.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_auth.AuthResponse'
+            $ref: '#/definitions/auth.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       summary: Login user
       tags:
       - auth
@@ -312,11 +525,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_auth.MessageResponse'
+            $ref: '#/definitions/auth.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Logout user
@@ -331,14 +544,45 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_auth.UserDTO'
+            $ref: '#/definitions/auth.UserDTO'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get current user
+      tags:
+      - auth
+    put:
+      consumes:
+      - application/json
+      description: Update the current authenticated user's profile information
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.UserDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update profile
       tags:
       - auth
   /api/auth/refresh:
@@ -352,7 +596,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.RefreshTokenRequest'
+          $ref: '#/definitions/auth.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -365,11 +609,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       summary: Refresh access token
       tags:
       - auth
@@ -384,22 +628,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.RegisterRequest'
+          $ref: '#/definitions/auth.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_auth.MessageResponse'
+            $ref: '#/definitions/auth.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       summary: Register a new user
       tags:
       - auth
@@ -414,22 +658,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.SendOTPRequest'
+          $ref: '#/definitions/auth.SendOTPRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_auth.MessageResponse'
+            $ref: '#/definitions/auth.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       summary: Send OTP
       tags:
       - auth
@@ -444,71 +688,25 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.VerifyOTPRequest'
+          $ref: '#/definitions/auth.VerifyOTPRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_auth.MessageResponse'
+            $ref: '#/definitions/auth.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/internal_auth.ErrorResponse'
+            $ref: '#/definitions/auth.ErrorResponse'
       summary: Verify OTP
       tags:
       - auth
-  /api/test/upload:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload a test image to Cloudflare R2 (no auth required - for testing only)
-      parameters:
-      - description: Image file to upload
-        in: formData
-        name: image
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns uploaded image URL
-          schema:
-            type: object
-            properties:
-              success:
-                type: boolean
-              message:
-                type: string
-              url:
-                type: string
-              filename:
-                type: string
-              size:
-                type: integer
-              test_id:
-                type: string
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Test image upload to R2
-      tags:
-      - test
   /api/cars:
     get:
       consumes:
@@ -667,7 +865,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_listing.Car'
+            $ref: '#/definitions/listing.Car'
         "400":
           description: Bad Request
           schema:
@@ -732,7 +930,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_listing.CarResponse'
+            $ref: '#/definitions/listing.CarResponse'
         "400":
           description: Bad Request
           schema:
@@ -780,7 +978,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_listing.Car'
+            $ref: '#/definitions/listing.Car'
         "400":
           description: Bad Request
           schema:
@@ -833,6 +1031,33 @@ paths:
       security:
       - BearerAuth: []
       summary: Toggle favorite status
+      tags:
+      - listings
+  /api/cars/{id}/view:
+    post:
+      description: Increment the view count for a car listing
+      parameters:
+      - description: Car ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Increment view count
       tags:
       - listings
   /api/cars/favorites:
@@ -901,6 +1126,210 @@ paths:
       summary: Get my listings
       tags:
       - listings
+  /api/test/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a test image to Cloudflare R2 (no auth required - for testing
+        only)
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns uploaded image URL
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Test image upload to R2
+      tags:
+      - test
+  /api/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an image to Cloudflare R2
+      parameters:
+      - description: Image file to upload
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns uploaded image URL
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload an image
+      tags:
+      - common
+  /chat/conversations:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/chat.ConversationResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get user's conversations
+      tags:
+      - Chat
+    post:
+      parameters:
+      - description: Participant IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chat.StartConversationRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/chat.Conversation'
+      security:
+      - BearerAuth: []
+      summary: Start a new conversation
+      tags:
+      - Chat
+  /chat/conversations/{id}/messages:
+    get:
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/chat.ChatHistoryResponse'
+      security:
+      - BearerAuth: []
+      summary: Get chat history
+      tags:
+      - Chat
+  /chat/device:
+    delete:
+      parameters:
+      - description: FCM token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            fcm_token:
+              type: string
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Unregister device from push notifications
+      tags:
+      - Chat
+    post:
+      parameters:
+      - description: Device info
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            device_type:
+              type: string
+            fcm_token:
+              type: string
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Register device for push notifications
+      tags:
+      - Chat
+  /chat/ws:
+    get:
+      parameters:
+      - description: JWT token for authentication
+        in: query
+        name: token
+        required: true
+        type: string
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+      summary: Connect to chat WebSocket
+      tags:
+      - Chat
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

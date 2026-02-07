@@ -36,10 +36,9 @@ CarModel _$CarModelFromJson(Map<String, dynamic> json) => CarModel(
   expiresAt: DateTime.parse(json['expires_at'] as String),
   isFavorited: json['is_favorited'] as bool? ?? false,
   isOwner: json['is_owner'] as bool? ?? false,
-  sellerName: json['seller_name'] as String?,
-  sellerPhoto: json['seller_photo'] as String?,
-  sellerRating: (json['seller_rating'] as num?)?.toDouble(),
-  sellerPhone: json['seller_phone'] as String?,
+  seller: json['seller'] == null
+      ? null
+      : SellerModel.fromJson(json['seller'] as Map<String, dynamic>),
   chatOnly: json['chat_only'] as bool? ?? false,
 );
 
@@ -72,8 +71,22 @@ Map<String, dynamic> _$CarModelToJson(CarModel instance) => <String, dynamic>{
   'chat_only': instance.chatOnly,
   'is_favorited': instance.isFavorited,
   'is_owner': instance.isOwner,
-  'seller_name': instance.sellerName,
-  'seller_photo': instance.sellerPhoto,
-  'seller_rating': instance.sellerRating,
-  'seller_phone': instance.sellerPhone,
+  'seller': instance.seller,
 };
+
+SellerModel _$SellerModelFromJson(Map<String, dynamic> json) => SellerModel(
+  id: json['id'] as String,
+  name: json['name'] as String?,
+  profilePhoto: json['profile_photo'] as String?,
+  phone: json['phone'] as String?,
+  rating: (json['rating'] as num?)?.toDouble(),
+);
+
+Map<String, dynamic> _$SellerModelToJson(SellerModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'profile_photo': instance.profilePhoto,
+      'phone': instance.phone,
+      'rating': instance.rating,
+    };

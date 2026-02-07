@@ -74,8 +74,11 @@ class ChatRepository {
   }
 
   /// Start or get existing conversation
-  Future<ConversationModel> startConversation(List<String> participantIds) {
-    return _chatService.startConversation(participantIds);
+  Future<ConversationModel> startConversation(
+    List<String> participantIds, {
+    Map<String, dynamic>? context,
+  }) {
+    return _chatService.startConversation(participantIds, context: context);
   }
 
   /// Get message history

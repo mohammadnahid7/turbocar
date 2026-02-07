@@ -6,12 +6,22 @@ import (
 	"github.com/google/uuid"
 )
 
-// Conversation represents a chat room between users
+// Conversation represents a chat room between users about a specific car
 type Conversation struct {
-	ID        uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt time.Time              `json:"created_at"`
-	UpdatedAt time.Time              `json:"updated_at"`
-	Metadata  map[string]interface{} `json:"metadata" gorm:"type:jsonb"`
+	ID uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+
+	// Car context (denormalized for performance)
+	CarID       *uuid.UUID `json:"car_id,omitempty" gorm:"type:uuid;index"`
+	CarTitle    string     `json:"car_title,omitempty" gorm:"type:varchar(255)"`
+	CarSellerID *uuid.UUID `json:"car_seller_id,omitempty" gorm:"type:uuid;index"`
+
+	// Timestamps
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	LastMessageAt *time.Time `json:"last_message_at,omitempty" gorm:"index"`
+
+	// Flexible metadata with proper JSONB handling
+	Metadata Metadata `json:"metadata,omitempty" gorm:"type:jsonb;default:'{}'"`
 
 	// Relations
 	Participants []ConversationParticipant `json:"participants,omitempty" gorm:"foreignKey:ConversationID"`

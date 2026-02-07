@@ -49,14 +49,7 @@ class CarModel {
   final bool isFavorited;
   @JsonKey(name: 'is_owner')
   final bool isOwner;
-  @JsonKey(name: 'seller_name')
-  final String? sellerName;
-  @JsonKey(name: 'seller_photo')
-  final String? sellerPhoto;
-  @JsonKey(name: 'seller_rating')
-  final double? sellerRating;
-  @JsonKey(name: 'seller_phone')
-  final String? sellerPhone;
+  final SellerModel? seller;
 
   CarModel({
     required this.id,
@@ -86,10 +79,7 @@ class CarModel {
     required this.expiresAt,
     this.isFavorited = false,
     this.isOwner = false,
-    this.sellerName,
-    this.sellerPhoto,
-    this.sellerRating,
-    this.sellerPhone,
+    this.seller,
     this.chatOnly = false,
   });
 
@@ -126,10 +116,7 @@ class CarModel {
     DateTime? expiresAt,
     bool? isFavorited,
     bool? isOwner,
-    String? sellerName,
-    String? sellerPhoto,
-    double? sellerRating,
-    String? sellerPhone,
+    SellerModel? seller,
     bool? chatOnly,
   }) {
     return CarModel(
@@ -160,11 +147,31 @@ class CarModel {
       expiresAt: expiresAt ?? this.expiresAt,
       isFavorited: isFavorited ?? this.isFavorited,
       isOwner: isOwner ?? this.isOwner,
-      sellerName: sellerName ?? this.sellerName,
-      sellerPhoto: sellerPhoto ?? this.sellerPhoto,
-      sellerRating: sellerRating ?? this.sellerRating,
-      sellerPhone: sellerPhone ?? this.sellerPhone,
+      seller: seller ?? this.seller,
       chatOnly: chatOnly ?? this.chatOnly,
     );
   }
+}
+
+@JsonSerializable()
+class SellerModel {
+  final String id;
+  final String? name;
+  @JsonKey(name: 'profile_photo')
+  final String? profilePhoto;
+  final String? phone;
+  final double? rating;
+
+  SellerModel({
+    required this.id,
+    this.name,
+    this.profilePhoto,
+    this.phone,
+    this.rating,
+  });
+
+  factory SellerModel.fromJson(Map<String, dynamic> json) =>
+      _$SellerModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SellerModelToJson(this);
 }

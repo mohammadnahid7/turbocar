@@ -73,10 +73,14 @@ class ConversationsNotifier extends AsyncNotifier<List<ConversationModel>> {
 
   /// Start a new conversation
   Future<ConversationModel> startConversation(
-    List<String> participantIds,
-  ) async {
+    List<String> participantIds, {
+    Map<String, dynamic>? context,
+  }) async {
     final repo = ref.read(chatRepositoryProvider);
-    final conversation = await repo.startConversation(participantIds);
+    final conversation = await repo.startConversation(
+      participantIds,
+      context: context,
+    );
     await refresh();
     return conversation;
   }
@@ -277,8 +281,8 @@ class ChatConnectionManager {
     if (token.isEmpty) return;
 
     // Build WebSocket URL from API base URL
-    // Assuming API is at http://localhost:3000, WS is at ws://localhost:3000/api/chat/ws
-    const baseUrl = 'ws://localhost:3000/api/chat/ws'; // TODO: Get from config
+    // Assuming API is at http://localhost:3000, WS is at ws://localhost:3000/chat/ws
+    const baseUrl = 'ws://localhost:3000/chat/ws'; // TODO: Get from config
 
     final repo = _ref.read(chatRepositoryProvider);
     await repo.connectWebSocket(baseUrl, token);

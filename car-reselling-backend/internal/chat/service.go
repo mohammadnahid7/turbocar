@@ -28,15 +28,21 @@ func NewService(repo *Repository, notification NotificationSender) *Service {
 
 // --- Conversation Operations ---
 
-// StartConversation creates or retrieves a conversation between users
-func (s *Service) StartConversation(participantIDs []uuid.UUID, context map[string]interface{}) (*Conversation, error) {
-	// Check if conversation already exists between these users
-	existing, err := s.repo.GetConversationBetweenUsers(participantIDs)
+// StartConversation creates or retrieves a conversation between users about a car
+func (s *Service) StartConversation(participantIDs []uuid.UUID, carID *uuid.UUID, carTitle string, context Metadata) (*Conversation, error) {
+	// Check if conversation already exists between these users for this car
+	existing, err := s.repo.GetConversationBetweenUsers(participantIDs, carID)
 	if err == nil && existing.ID != uuid.Nil {
 		return existing, nil
 	}
 
-	return s.repo.CreateConversation(participantIDs, context)
+	// Extract seller ID from participants (first participant is typically the seller)
+	var carSellerID *uuid.UUID
+	if len(participantIDs) > 0 {
+		carSellerID = &participantIDs[0]
+	}
+
+	return s.repo.CreateConversation(participantIDs, carID, carTitle, carSellerID, context)
 }
 
 // GetUserConversations retrieves all conversations for a user with last message
@@ -65,6 +71,8 @@ func (s *Service) GetUserConversations(userID uuid.UUID) ([]ConversationResponse
 
 		responses[i] = ConversationResponse{
 			ID:           conv.ID,
+			CarID:        conv.CarID,
+			CarTitle:     conv.CarTitle,
 			Participants: participants,
 			UnreadCount:  int(unreadCount),
 			CreatedAt:    conv.CreatedAt.Format(time.RFC3339),
