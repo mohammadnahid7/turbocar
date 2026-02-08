@@ -14,10 +14,10 @@ import '../../../core/router/route_names.dart';
 import '../../../data/providers/car_details_provider.dart';
 import '../../../data/providers/saved_cars_provider.dart';
 import '../../../data/models/car_model.dart';
-import '../../providers/chat_provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/chat_room_data.dart';
+import '../../widgets/specific/seller_info_card.dart';
 
 class ShowPostPage extends ConsumerStatefulWidget {
   final String carId;
@@ -99,7 +99,14 @@ class _ShowPostPageState extends ConsumerState<ShowPostPage> {
 
                 // Price
                 _buildPriceSection(car),
-                const SizedBox(height: 20),
+
+                // Seller Information Card
+                if (car.seller != null)
+                  SellerInfoCard(
+                    sellerName: car.seller!.name,
+                    sellerProfilePhotoUrl: car.seller!.profilePhoto,
+                  ),
+                const SizedBox(height: 10),
 
                 // Specs Cards (Mileage, Fuel Type)
                 _buildSpecsCards(car),
@@ -277,7 +284,7 @@ class _ShowPostPageState extends ConsumerState<ShowPostPage> {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 20,
                   ),
                 ),
               ),
@@ -311,7 +318,8 @@ class _ShowPostPageState extends ConsumerState<ShowPostPage> {
     return Text(
       '₩ ${priceFormat.format(car.price)}',
       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w900,
+        fontSize: 20,
         color: Theme.of(context).appBarTheme.foregroundColor,
       ),
     );

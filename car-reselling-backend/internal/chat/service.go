@@ -61,6 +61,7 @@ func (s *Service) GetUserConversations(userID uuid.UUID) ([]ConversationResponse
 			CarTitle:    item.CarTitle,
 			CarImageURL: derefString(item.CarImageURL),
 			CarPrice:    item.CarPrice,
+			CarSellerID: item.CarSellerID,
 			Participants: []ParticipantResponse{
 				{
 					UserID:    item.OtherUserID,

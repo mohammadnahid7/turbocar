@@ -37,6 +37,7 @@ type ConversationResponse struct {
 	CarTitle     string                `json:"car_title,omitempty"`
 	CarImageURL  string                `json:"car_image_url,omitempty"`
 	CarPrice     *float64              `json:"car_price,omitempty"`
+	CarSellerID  *uuid.UUID            `json:"car_seller_id,omitempty"`
 	Participants []ParticipantResponse `json:"participants"`
 	LastMessage  *MessageResponse      `json:"last_message,omitempty"`
 	UnreadCount  int                   `json:"unread_count"`

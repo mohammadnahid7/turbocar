@@ -83,6 +83,7 @@ type ConversationListItem struct {
 	CarTitle            string     `json:"car_title,omitempty"`
 	CarImageURL         *string    `json:"car_image_url,omitempty"`
 	CarPrice            *float64   `json:"car_price,omitempty"`
+	CarSellerID         *uuid.UUID `json:"car_seller_id,omitempty"`
 	LastMessageAt       *string    `json:"last_message_at,omitempty"`
 	UnreadCount         int        `json:"unread_count"`
 	OtherUserID         uuid.UUID  `json:"other_user_id"`
@@ -103,6 +104,7 @@ func (r *Repository) GetUserConversationsOptimized(userID uuid.UUID, limit, offs
 			c.id,
 			c.car_id,
 			c.car_title,
+			c.car_seller_id,
 			-- Get first image from car images array
 			car.images[1] as car_image_url,
 			car.price as car_price,

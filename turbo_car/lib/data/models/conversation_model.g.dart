@@ -13,6 +13,7 @@ ConversationModel _$ConversationModelFromJson(Map<String, dynamic> json) =>
       carTitle: json['car_title'] as String?,
       carImageUrl: json['car_image_url'] as String?,
       carPrice: (json['car_price'] as num?)?.toDouble(),
+      carSellerId: json['car_seller_id'] as String?,
       participants: (json['participants'] as List<dynamic>)
           .map((e) => ParticipantModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -32,6 +33,7 @@ Map<String, dynamic> _$ConversationModelToJson(ConversationModel instance) =>
       'car_title': instance.carTitle,
       'car_image_url': instance.carImageUrl,
       'car_price': instance.carPrice,
+      'car_seller_id': instance.carSellerId,
       'participants': instance.participants,
       'last_message': instance.lastMessage,
       'unread_count': instance.unreadCount,

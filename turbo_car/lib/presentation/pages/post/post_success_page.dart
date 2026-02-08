@@ -44,7 +44,7 @@ class PostSuccessPage extends StatelessWidget {
               const SizedBox(height: 16),
 
               Text(
-                'Your car listing has been successfully posted. It will be visible to potential buyers soon.',
+                'Your car listing has been successfully posted. It will be visible to potential buyings soon.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(
                     context,

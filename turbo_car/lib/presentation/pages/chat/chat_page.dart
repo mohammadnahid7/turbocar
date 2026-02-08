@@ -1,5 +1,5 @@
 /// Chat Page (Conversation List)
-/// Displays list of user's chat conversations
+/// Displays list of user's chat conversations with role-based filtering
 library;
 
 import 'package:flutter/material.dart';
@@ -15,6 +15,7 @@ import '../../providers/chat_provider.dart';
 import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/loading_indicator.dart';
+import '../../widgets/common/role_badge.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({super.key});
@@ -23,10 +24,16 @@ class ChatPage extends ConsumerStatefulWidget {
   ConsumerState<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends ConsumerState<ChatPage> {
+class _ChatPageState extends ConsumerState<ChatPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
+
     // Connect to WebSocket when page loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _connectWebSocket();
@@ -34,6 +41,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       // Only NEW chats with unread after this will show in badge
       _acknowledgeAllChats();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      setState(() {});
+    }
   }
 
   /// Mark all current conversations as "acknowledged" so badge shows 0
@@ -60,6 +80,52 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     }
   }
 
+  /// Filter conversations based on selected tab and current user's role
+  List<ConversationModel> _getFilteredConversations(
+    List<ConversationModel> allConversations,
+    String currentUserId,
+  ) {
+    final tabIndex = _tabController.index;
+
+    if (tabIndex == 0) {
+      // All tab - show all conversations
+      return allConversations;
+    } else if (tabIndex == 1) {
+      // buying tab - show only conversations where user is buying
+      return allConversations
+          .where((c) => c.getUserRole(currentUserId) == 'buying')
+          .toList();
+    } else {
+      // Seller tab - show only conversations where user is seller
+      return allConversations
+          .where((c) => c.getUserRole(currentUserId) == 'selling')
+          .toList();
+    }
+  }
+
+  /// Get counts for each tab
+  Map<String, int> _getCounts(
+    List<ConversationModel> allConversations,
+    String currentUserId,
+  ) {
+    int buyingCount = 0;
+    int sellingCount = 0;
+
+    for (final conv in allConversations) {
+      if (conv.getUserRole(currentUserId) == 'buying') {
+        buyingCount++;
+      } else {
+        sellingCount++;
+      }
+    }
+
+    return {
+      'all': allConversations.length,
+      'buying': buyingCount,
+      'selling': sellingCount,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -74,11 +140,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       return _buildLoginPrompt(context);
     }
 
-    // Authenticated user - show conversation list
+    // Authenticated user - show conversation list with tabs
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColorDark,
       appBar: CustomAppBar(title: StringConstants.chats, isMainNavPage: true),
-      body: _buildConversationList(),
+      body: _buildConversationListWithTabs(),
     );
   }
 
@@ -119,9 +185,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildConversationList() {
+  Widget _buildConversationListWithTabs() {
     final conversationsAsync = ref.watch(conversationsProvider);
     final connectionState = ref.watch(connectionStateProvider);
+    final authState = ref.watch(authProvider);
+    final currentUserId = authState.user?.id ?? '';
 
     return Column(
       children: [
@@ -132,21 +200,40 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           error: (_, __) => const SizedBox.shrink(),
         ),
 
+        // Tab bar
+        conversationsAsync.when(
+          data: (conversations) {
+            final counts = _getCounts(conversations, currentUserId);
+            return _buildTabBar(counts);
+          },
+          loading: () => _buildTabBar({'all': 0, 'buying': 0, 'selling': 0}),
+          error: (_, __) => _buildTabBar({'all': 0, 'buying': 0, 'selling': 0}),
+        ),
+
         // Conversation list
         Expanded(
           child: conversationsAsync.when(
             data: (conversations) {
-              if (conversations.isEmpty) {
-                return _buildEmptyState();
+              final filteredConversations = _getFilteredConversations(
+                conversations,
+                currentUserId,
+              );
+
+              if (filteredConversations.isEmpty) {
+                return _buildEmptyStateForTab();
               }
+
               return RefreshIndicator(
                 onRefresh: () =>
                     ref.read(conversationsProvider.notifier).refresh(),
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: conversations.length,
+                  itemCount: filteredConversations.length,
                   itemBuilder: (context, index) {
-                    return _buildConversationTile(conversations[index]);
+                    return _buildConversationTile(
+                      filteredConversations[index],
+                      currentUserId,
+                    );
                   },
                 ),
               );
@@ -157,7 +244,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Failed to load conversations'),
+                  const Text('Failed to load conversations'),
                   const SizedBox(height: 16),
                   CustomButton(
                     text: 'Retry',
@@ -170,6 +257,34 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTabBar(Map<String, int> counts) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        labelColor: Theme.of(context).colorScheme.primary,
+        unselectedLabelColor: Theme.of(
+          context,
+        ).colorScheme.onSurface.withValues(alpha: 0.6),
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        dividerColor: Colors.transparent,
+        tabs: [
+          Tab(text: 'All (${counts['all']})'),
+          Tab(text: 'Buying (${counts['buying']})'),
+          Tab(text: 'Selling (${counts['selling']})'),
+        ],
+      ),
     );
   }
 
@@ -214,7 +329,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyStateForTab() {
+    String message;
+    switch (_tabController.index) {
+      case 1:
+        message = 'No buying conversations yet';
+      case 2:
+        message = 'No selling conversations yet';
+      default:
+        message = 'No conversations yet';
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -229,13 +354,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               ).colorScheme.primary.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 24),
-            Text(
-              'No conversations yet',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(message, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              'Start a conversation by messaging a car seller',
+              _tabController.index == 1
+                  ? 'Start a conversation by messaging a car seller'
+                  : _tabController.index == 2
+                  ? 'Post a car and wait for buyings to contact you'
+                  : 'Start a conversation by messaging a car seller',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(
@@ -249,11 +375,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildConversationTile(ConversationModel conversation) {
-    final authState = ref.read(authProvider);
-    final currentUserId = authState.user?.id ?? '';
+  Widget _buildConversationTile(
+    ConversationModel conversation,
+    String currentUserId,
+  ) {
     final otherParticipant = conversation.getOtherParticipant(currentUserId);
     final lastMessage = conversation.lastMessage;
+    final role = conversation.getUserRole(currentUserId);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -274,14 +402,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               )
             : null,
       ),
-      title: Text(
-        // Show car title if available, otherwise show participant name
-        conversation.carTitle ?? otherParticipant?.fullName ?? 'Chat',
-        style: TextStyle(
-          fontWeight: conversation.unreadCount > 0
-              ? FontWeight.w700
-              : FontWeight.w400,
-        ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  // Show car title if available, otherwise show participant name
+                  conversation.carTitle ?? otherParticipant?.fullName ?? 'Chat',
+                  style: TextStyle(
+                    fontWeight: conversation.unreadCount > 0
+                        ? FontWeight.w700
+                        : FontWeight.w400,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 10),
+                RoleBadge(role: role),
+              ],
+            ),
+          ),
+        ],
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

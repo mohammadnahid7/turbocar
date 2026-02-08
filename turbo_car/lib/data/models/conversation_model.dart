@@ -18,6 +18,8 @@ class ConversationModel {
   final String? carImageUrl;
   @JsonKey(name: 'car_price')
   final double? carPrice;
+  @JsonKey(name: 'car_seller_id')
+  final String? carSellerId;
   final List<ParticipantModel> participants;
   @JsonKey(name: 'last_message')
   final MessageModel? lastMessage;
@@ -36,6 +38,7 @@ class ConversationModel {
     this.carTitle,
     this.carImageUrl,
     this.carPrice,
+    this.carSellerId,
     required this.participants,
     this.lastMessage,
     this.unreadCount = 0,
@@ -58,6 +61,15 @@ class ConversationModel {
     );
   }
 
+  /// Get the current user's role in this conversation
+  /// Returns 'seller' if current user is the car seller, 'buying' otherwise
+  String getUserRole(String currentUserId) {
+    if (carSellerId != null && currentUserId == carSellerId) {
+      return 'selling';
+    }
+    return 'buying';
+  }
+
   /// Create a copy with updated fields
   ConversationModel copyWith({
     String? id,
@@ -65,6 +77,7 @@ class ConversationModel {
     String? carTitle,
     String? carImageUrl,
     double? carPrice,
+    String? carSellerId,
     List<ParticipantModel>? participants,
     MessageModel? lastMessage,
     int? unreadCount,
@@ -78,6 +91,7 @@ class ConversationModel {
       carTitle: carTitle ?? this.carTitle,
       carImageUrl: carImageUrl ?? this.carImageUrl,
       carPrice: carPrice ?? this.carPrice,
+      carSellerId: carSellerId ?? this.carSellerId,
       participants: participants ?? this.participants,
       lastMessage: lastMessage ?? this.lastMessage,
       unreadCount: unreadCount ?? this.unreadCount,
