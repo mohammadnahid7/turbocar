@@ -15,6 +15,8 @@ import 'data/providers/user_provider.dart';
 import 'data/providers/car_image_provider.dart';
 import 'core/providers/providers.dart';
 import 'core/services/car_image_service.dart';
+import 'core/services/notification_service.dart';
+import 'presentation/providers/notification_provider.dart';
 import 'app.dart';
 
 void main() async {
@@ -25,6 +27,17 @@ void main() async {
     await FirebaseService.initialize();
   } catch (e) {
     print('Firebase initialization error: $e');
+  }
+
+  // Initialize notification service (FCM)
+  try {
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    print(
+      'Notification service initialized, FCM token: ${notificationService.fcmToken}',
+    );
+  } catch (e) {
+    print('Notification service initialization error: $e');
   }
 
   // Initialize storage service
@@ -87,6 +100,10 @@ void main() async {
         postCarProvider.overrideWith((ref) {
           final dioClient = ref.watch(dioClientProvider);
           return PostCarNotifier(dioClient);
+        }),
+        notificationListProvider.overrideWith((ref) {
+          final storageService = ref.watch(storageServiceProvider);
+          return NotificationListNotifier(storageService);
         }),
       ],
       child: const App(),

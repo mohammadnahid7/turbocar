@@ -18,7 +18,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// Handler handles HTTP requests for chats
+// Handler handles HTTP requests for chatsa
 type Handler struct {
 	hub     *Hub
 	service *Service

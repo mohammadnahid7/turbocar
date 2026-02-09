@@ -24,6 +24,7 @@ type ListingRepository interface {
 	RemoveFromFavorites(ctx context.Context, userID, carID uuid.UUID) error
 	GetFavorites(ctx context.Context, userID uuid.UUID, page, limit int) ([]Car, int64, error)
 	IsFavorited(ctx context.Context, userID, carID uuid.UUID) (bool, error)
+	GetUsersFavoritedCar(ctx context.Context, carID uuid.UUID) ([]uuid.UUID, error)
 
 	// Limits
 	CountDailyPosts(ctx context.Context, userID uuid.UUID) (int64, error)
@@ -288,4 +289,26 @@ func (r *postgresRepository) CountDailyPosts(ctx context.Context, userID uuid.UU
 		Where("seller_id = ? AND created_at >= CURRENT_DATE", userID.String()).
 		Count(&count).Error
 	return count, err
+}
+
+func (r *postgresRepository) GetUsersFavoritedCar(ctx context.Context, carID uuid.UUID) ([]uuid.UUID, error) {
+	var userIDStrings []string
+	err := r.db.WithContext(ctx).
+		Table("favorites").
+		Where("car_id = ?", carID.String()).
+		Pluck("user_id", &userIDStrings).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert strings to UUIDs
+	userIDs := make([]uuid.UUID, 0, len(userIDStrings))
+	for _, idStr := range userIDStrings {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			continue // Skip invalid UUIDs
+		}
+		userIDs = append(userIDs, id)
+	}
+	return userIDs, nil
 }

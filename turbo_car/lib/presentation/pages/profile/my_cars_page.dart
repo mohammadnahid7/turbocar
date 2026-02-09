@@ -195,7 +195,9 @@ class _MyCarsPageState extends ConsumerState<MyCarsPage> {
                   car: car,
                   showSaveButton: false,
                   showDeleteButton: true,
+                  showEditButton: true,
                   onTap: () => context.push('/post/${car.id}'),
+                  onEdit: () => context.push('/edit-car', extra: car),
                   onDelete: () async {
                     // Show confirmation dialog
                     final confirmed = await showDialog<bool>(

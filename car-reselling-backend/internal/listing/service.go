@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"time"
 
@@ -13,11 +14,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// NotifierService is an interface for sending push notifications
+type NotifierService interface {
+	SendToUsers(userIDs []uuid.UUID, title, body string, data map[string]string) error
+}
+
 // ListingService struct
 type ListingService struct {
-	repo    ListingRepository
-	storage StorageService
-	cache   *redis.Client
+	repo     ListingRepository
+	storage  StorageService
+	cache    *redis.Client
+	notifier NotifierService
 }
 
 // NewService creates a new ListingService
@@ -27,6 +34,11 @@ func NewService(repo ListingRepository, storage StorageService, cache *redis.Cli
 		storage: storage,
 		cache:   cache,
 	}
+}
+
+// SetNotifier sets the notification service
+func (s *ListingService) SetNotifier(n NotifierService) {
+	s.notifier = n
 }
 
 // CreateListing handles creating a new car listing
@@ -197,10 +209,13 @@ func (s *ListingService) UpdateListing(ctx context.Context, carID, userID uuid.U
 		return nil, err
 	}
 
-	// 2. Verify ownership
+	// 2. Verify ownerships
 	if car.SellerID != userID {
 		return nil, errors.New("unauthorized: you do not own this listing")
 	}
+
+	// Track old price for notification
+	oldPrice := car.Price
 
 	// 3. Update fields
 	if req.Title != "" {
@@ -252,28 +267,30 @@ func (s *ListingService) UpdateListing(ctx context.Context, carID, userID uuid.U
 		car.Status = req.Status
 	}
 
-	// 4. Handle new images
+	// 4. Handle images - merge existing with new uploads
+	// Start with existing images that the user wants to keep
+	var finalImages []string
+	if len(req.ExistingImages) > 0 {
+		finalImages = append(finalImages, req.ExistingImages...)
+	}
+
+	// Upload and add new images
 	if len(newFiles) > 0 {
 		if err := ValidateImages(newFiles); err != nil {
 			return nil, err
 		}
-		// Upload new
-		urls, err := s.storage.UploadMultipleImages(ctx, newFiles, car.ID.String())
+		// Upload new images
+		newUrls, err := s.storage.UploadMultipleImages(ctx, newFiles, car.ID.String())
 		if err != nil {
 			return nil, err
 		}
-		// Append or Replace?
-		// "Users can update their own listings... Upload new images if provided".
-		// Usually replaces or adds. Let's assume replace if files are sent, or maybe add.
-		// "Update car record"
-		// I will Replace for simplicity, or append if desired.
-		// Given we don't have logic to delete specific images in update request, Replace is safer to avoid orphans if logic implies "update" = "set state".
-		// But let's Append for now, or Replace if logical.
-		// Actually, standard PUT usually replaces the resource state. Let's append if arrays, but here we likely want to replace the set.
-		// Let's assume Replace for now.
-		// Old images cleanup?
-		// s.storage.DeleteMultipleImages(ctx, car.Images)
-		car.Images = urls
+		finalImages = append(finalImages, newUrls...)
+	}
+
+	// Update images only if we have some (existing or new)
+	// If no existing images specified and no new files, keep original images
+	if len(req.ExistingImages) > 0 || len(newFiles) > 0 {
+		car.Images = finalImages
 	}
 
 	car.UpdatedAt = time.Now()
@@ -286,7 +303,82 @@ func (s *ListingService) UpdateListing(ctx context.Context, carID, userID uuid.U
 	// 6. Invalidate cache
 	s.cache.Del(ctx, fmt.Sprintf("cache:car:%s", carID))
 
+	// 7. Send price change notifications (async, don't block response)
+	log.Printf("DEBUG: UpdateListing - notifier=%v, reqPrice=%v, oldPrice=%v, newPrice=%v",
+		s.notifier != nil, req.Price, oldPrice, car.Price)
+	if s.notifier != nil && oldPrice != car.Price {
+		log.Printf("DEBUG: Triggering price change notification for car %s", carID)
+
+		var carImage string
+		if len(car.Images) > 0 {
+			carImage = car.Images[0]
+		}
+
+		go s.sendPriceChangeNotifications(carID, car.SellerID, car.Title, oldPrice, car.Price, carImage)
+	}
+
 	return car, nil
+}
+
+// sendPriceChangeNotifications notifies users who favorited this car about price change
+func (s *ListingService) sendPriceChangeNotifications(carID, ownerID uuid.UUID, carTitle string, oldPrice, newPrice float64, carImage string) {
+	ctx := context.Background()
+
+	// Get users who favorited this car
+	userIDs, err := s.repo.GetUsersFavoritedCar(ctx, carID)
+	if err != nil {
+		log.Printf("Failed to get favorited users for car %s: %v", carID, err)
+		return
+	}
+
+	if len(userIDs) == 0 {
+		return
+	}
+
+	// Filter out owner and verify favorites
+	var validUserIDs []uuid.UUID
+	for _, uid := range userIDs {
+		// Bug 1 Fix: Exclude owner
+		if uid == ownerID {
+			continue
+		}
+
+		// Bug 3 Fix: Verify favorite still exists (handle race conditions)
+		isFav, err := s.repo.IsFavorited(ctx, uid, carID)
+		if err == nil && isFav {
+			validUserIDs = append(validUserIDs, uid)
+		}
+	}
+
+	if len(validUserIDs) == 0 {
+		return
+	}
+
+	// Determine if price went up or down
+	var direction string
+	if newPrice < oldPrice {
+		direction = "dropped"
+	} else {
+		direction = "increased"
+	}
+
+	title := "Price Alert! 🔔"
+	body := fmt.Sprintf("A car you saved has %s! %s: $%.0f → $%.0f", direction, carTitle, oldPrice, newPrice)
+
+	data := map[string]string{
+		"type":         "price_change",
+		"car_id":       carID.String(),
+		"old_price":    fmt.Sprintf("%.0f", oldPrice),
+		"new_price":    fmt.Sprintf("%.0f", newPrice),
+		"car_image":    carImage,
+		"click_action": "FLUTTER_NOTIFICATION_CLICK",
+	}
+
+	if err := s.notifier.SendToUsers(validUserIDs, title, body, data); err != nil {
+		log.Printf("Failed to send price change notifications: %v", err)
+	} else {
+		log.Printf("Sent price change notifications to %d users for car %s", len(validUserIDs), carID)
+	}
 }
 
 // DeleteListing deletes a listing

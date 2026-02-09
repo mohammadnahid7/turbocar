@@ -8,19 +8,23 @@ import 'package:image_picker/image_picker.dart';
 
 class ImagePickerGrid extends StatelessWidget {
   final List<XFile> images;
+  final List<String> existingImageUrls;
   final int maxImages;
   final int minImages;
   final void Function(XFile) onImageAdded;
   final void Function(int) onImageRemoved;
+  final void Function(int)? onExistingImageRemoved;
   final bool enabled;
 
   const ImagePickerGrid({
     super.key,
     required this.images,
+    this.existingImageUrls = const [],
     this.maxImages = 10,
     this.minImages = 1,
     required this.onImageAdded,
     required this.onImageRemoved,
+    this.onExistingImageRemoved,
     this.enabled = true,
   });
 
@@ -92,7 +96,9 @@ class ImagePickerGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAddMore = images.length < maxImages && enabled;
+    final totalImages = existingImageUrls.length + images.length;
+    final canAddMore = totalImages < maxImages && enabled;
+    final hasAnyImages = totalImages > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +112,7 @@ class ImagePickerGrid extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        if (images.isEmpty && !canAddMore)
+        if (!hasAnyImages && !canAddMore)
           Container(
             height: 120,
             decoration: BoxDecoration(
@@ -130,18 +136,23 @@ class ImagePickerGrid extends StatelessWidget {
             height: 120,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: images.length + (canAddMore ? 1 : 0),
+              itemCount: totalImages + (canAddMore ? 1 : 0),
               itemBuilder: (context, index) {
                 // Add button at the end
-                if (index == images.length) {
+                if (index == totalImages) {
                   return _buildAddButton(context);
                 }
-                // Image tile
-                return _buildImageTile(context, index);
+                // Existing images first
+                if (index < existingImageUrls.length) {
+                  return _buildExistingImageTile(context, index);
+                }
+                // Then new images
+                final newIndex = index - existingImageUrls.length;
+                return _buildImageTile(context, newIndex);
               },
             ),
           ),
-        if (images.length < minImages)
+        if (totalImages < minImages)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -188,6 +199,65 @@ class ImagePickerGrid extends StatelessWidget {
                 fontSize: 12,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExistingImageTile(BuildContext context, int index) {
+    return GestureDetector(
+      onTap: () => _showExistingImagePreview(context, index),
+      child: Container(
+        width: 120,
+        height: 120,
+        margin: const EdgeInsets.only(right: 8),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                existingImageUrls[index],
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 120,
+                  height: 120,
+                  color: Theme.of(context).cardColor,
+                  child: const Icon(Icons.broken_image, size: 48),
+                ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: 120,
+                    height: 120,
+                    color: Theme.of(context).cardColor,
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                },
+              ),
+            ),
+            if (enabled && onExistingImageRemoved != null)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => onExistingImageRemoved!(index),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -290,6 +360,76 @@ class ImagePickerGrid extends StatelessWidget {
                 ),
                 child: Text(
                   '${index + 1} / ${images.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExistingImagePreview(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Full-size image from URL
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  existingImageUrls[index],
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.broken_image, size: 64),
+                  ),
+                ),
+              ),
+            ),
+            // Close button
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ),
+            // Image counter
+            Positioned(
+              bottom: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${index + 1} / ${existingImageUrls.length}',
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),

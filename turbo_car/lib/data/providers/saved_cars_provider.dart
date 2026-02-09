@@ -196,6 +196,57 @@ class SavedCarsNotifier extends StateNotifier<SavedCarsState> {
         });
   }
 
+  /// Refresh saved cars from server (pull-to-refresh)
+  Future<void> refresh() async {
+    // Only works if logged in
+    final authState = _ref.read(authProvider);
+    if (!authState.isAuthenticated || authState.isGuest) {
+      // For guests, we can't fetch from server, so maybe just reload from storage?
+      // Or do nothing as guest data is local-only.
+      return;
+    }
+
+    try {
+      // Fetch fresh data from server
+      final serverCars = await _carRepository.fetchFavorites();
+
+      // Update local state (maintaining local-only/guest cars if any?
+      // Actually, if logged in, server should be source of truth + local unsynced variations.
+      // For simplicity and correctness with "refresh", we trust server data for price updates.
+      // But we should be careful not to wipe out pending local changes if any.
+      // Given the syncOnLogin logic, we can probably just replace the list
+      // or merge based on IDs to preserve local ordering if needed.
+      // Let's replace to ensure prices are fresh.
+
+      final freshCars = serverCars
+          .map((c) => c.copyWith(isFavorited: true))
+          .toList();
+
+      state = state.copyWith(cars: freshCars);
+      await _storageService.saveSavedCars(freshCars);
+      debugPrint('SavedCars: Refreshed ${freshCars.length} cars from server');
+    } catch (e) {
+      debugPrint('SavedCars: Refresh failed: $e');
+      // existing data is kept
+    }
+  }
+
+  /// Update price of a saved car (triggered by notification)
+  Future<void> updateCarPrice(String carId, double newPrice) async {
+    if (!state.isCarSaved(carId)) return;
+
+    final updatedCars = state.cars.map((car) {
+      if (car.id == carId) {
+        return car.copyWith(price: newPrice);
+      }
+      return car;
+    }).toList();
+
+    state = state.copyWith(cars: updatedCars);
+    await _storageService.saveSavedCars(updatedCars);
+    debugPrint('SavedCars: Updated price for car $carId to $newPrice');
+  }
+
   /// Remove saved car - Alias for unsaveCar (used by SavedPage)
   Future<void> removeSavedCar(String carId) async {
     await unsaveCar(carId);

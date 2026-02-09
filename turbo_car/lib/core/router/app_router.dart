@@ -11,6 +11,7 @@ import '../../presentation/pages/auth/register_page.dart';
 import '../../presentation/pages/splash/splash_page.dart';
 import '../../presentation/pages/notification/notification_page.dart';
 import '../../presentation/pages/show_post/show_post_page.dart';
+import '../../presentation/pages/post/post_page.dart';
 import '../../presentation/pages/post/post_success_page.dart';
 import '../../presentation/pages/profile/my_cars_page.dart';
 import '../../presentation/pages/profile/change_password_page.dart';
@@ -20,6 +21,7 @@ import '../../presentation/pages/profile/profile_settings_page.dart';
 import '../../presentation/pages/chat/chat_room_screen.dart';
 import '../../data/models/conversation_model.dart';
 import '../../data/models/chat_room_data.dart';
+import '../../data/models/car_model.dart';
 import 'auth_router_notifier.dart';
 import 'route_names.dart';
 
@@ -158,6 +160,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RouteNames.postSuccess,
         name: 'postSuccess',
         builder: (context, state) => const PostSuccessPage(),
+      ),
+      GoRoute(
+        path: '/edit-car',
+        name: 'editCar',
+        builder: (context, state) {
+          final car = state.extra as CarModel?;
+          return PostPage(carToEdit: car);
+        },
       ),
       GoRoute(
         path: RouteNames.myCars,

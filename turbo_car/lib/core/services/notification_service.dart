@@ -23,7 +23,13 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // Lazy initialization - don't access FirebaseMessaging until Firebase is initialized
+  FirebaseMessaging? _messaging;
+  FirebaseMessaging get messaging {
+    _messaging ??= FirebaseMessaging.instance;
+    return _messaging!;
+  }
+
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -33,6 +39,13 @@ class NotificationService {
 
   Stream<Map<String, dynamic>> get onNotificationTap =>
       _notificationTapController.stream;
+
+  // Stream controller for received notifications
+  final StreamController<RemoteMessage> _notificationReceivedController =
+      StreamController<RemoteMessage>.broadcast();
+
+  Stream<RemoteMessage> get onNotificationReceived =>
+      _notificationReceivedController.stream;
 
   String? _fcmToken;
   String? get fcmToken => _fcmToken;
@@ -54,7 +67,7 @@ class NotificationService {
 
   /// Request notification permission
   Future<void> _requestPermission() async {
-    final settings = await _messaging.requestPermission(
+    final settings = await messaging.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -99,7 +112,7 @@ class NotificationService {
 
   /// Create Android notification channel
   Future<void> _createNotificationChannel() async {
-    const channel = AndroidNotificationChannel(
+    const chatChannel = AndroidNotificationChannel(
       'chat_messages', // id
       'Chat Messages', // name
       description: 'Notifications for new chat messages',
@@ -107,11 +120,20 @@ class NotificationService {
       playSound: true,
     );
 
-    await _localNotifications
+    const priceAlertChannel = AndroidNotificationChannel(
+      'price_alerts', // id
+      'Price Alerts', // name
+      description: 'Notifications for price changes on saved cars',
+      importance: Importance.high,
+      playSound: true,
+    );
+
+    final androidPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(channel);
+        >();
+    await androidPlugin?.createNotificationChannel(chatChannel);
+    await androidPlugin?.createNotificationChannel(priceAlertChannel);
   }
 
   /// Set up FCM message handlers
@@ -126,7 +148,7 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen(_onNotificationOpenedApp);
 
     // Check if app was opened from notification (terminated state)
-    final initialMessage = await _messaging.getInitialMessage();
+    final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationData(initialMessage.data);
     }
@@ -135,11 +157,11 @@ class NotificationService {
   /// Get FCM token
   Future<String?> _getFCMToken() async {
     try {
-      _fcmToken = await _messaging.getToken();
+      _fcmToken = await messaging.getToken();
       debugPrint('FCM Token: $_fcmToken');
 
       // Listen for token refresh
-      _messaging.onTokenRefresh.listen((newToken) {
+      messaging.onTokenRefresh.listen((newToken) {
         _fcmToken = newToken;
         debugPrint('FCM Token refreshed: $newToken');
         // TODO: Send new token to backend
@@ -155,6 +177,9 @@ class NotificationService {
   /// Handle foreground messages - show local notification
   void _onForegroundMessage(RemoteMessage message) {
     debugPrint('Foreground message received: ${message.messageId}');
+
+    // Add to stream for app to handle (store/update UI)
+    _notificationReceivedController.add(message);
 
     final notification = message.notification;
     final data = message.data;
@@ -248,6 +273,54 @@ class NotificationService {
     );
   }
 
+  /// Show price alert notification for favorited cars
+  Future<void> showPriceAlertNotification({
+    required String carId,
+    required String title,
+    required String body,
+    String? oldPrice,
+    String? newPrice,
+  }) async {
+    final payload = jsonEncode({
+      'type': 'price_change',
+      'car_id': carId,
+      'old_price': oldPrice,
+      'new_price': newPrice,
+    });
+
+    // Use car ID hash as notification ID
+    final notificationId = carId.hashCode;
+
+    const androidDetails = AndroidNotificationDetails(
+      'price_alerts',
+      'Price Alerts',
+      channelDescription: 'Notifications for price changes on saved cars',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotifications.show(
+      notificationId,
+      title,
+      body,
+      details,
+      payload: payload,
+    );
+  }
+
   /// Cancel a specific notification
   Future<void> cancelNotification(int id) async {
     await _localNotifications.cancel(id);
@@ -260,12 +333,12 @@ class NotificationService {
 
   /// Subscribe to a topic (for broadcast notifications)
   Future<void> subscribeToTopic(String topic) async {
-    await _messaging.subscribeToTopic(topic);
+    await messaging.subscribeToTopic(topic);
   }
 
   /// Unsubscribe from a topic
   Future<void> unsubscribeFromTopic(String topic) async {
-    await _messaging.unsubscribeFromTopic(topic);
+    await messaging.unsubscribeFromTopic(topic);
   }
 
   /// Dispose resources

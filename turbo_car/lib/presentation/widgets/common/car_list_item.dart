@@ -11,10 +11,12 @@ class CarListItem extends ConsumerStatefulWidget {
   final CarModel car;
   final bool showSaveButton;
   final bool showDeleteButton;
+  final bool showEditButton;
   final bool showShareButton;
   final VoidCallback? onTap;
   final VoidCallback? onSave;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
   final VoidCallback? onShare;
 
   const CarListItem({
@@ -22,10 +24,12 @@ class CarListItem extends ConsumerStatefulWidget {
     required this.car,
     this.showSaveButton = true,
     this.showDeleteButton = false,
+    this.showEditButton = false,
     this.showShareButton = false,
     this.onTap,
     this.onSave,
     this.onDelete,
+    this.onEdit,
     this.onShare,
   });
 
@@ -180,28 +184,55 @@ class _CarListItemState extends ConsumerState<CarListItem>
                     ),
                   ),
                 ),
-                // Save/Delete button
-                if (widget.showSaveButton || widget.showDeleteButton)
-                  CustomButton.icon(
-                    icon: widget.showDeleteButton
-                        ? Icons.delete
-                        : Icons.bookmark,
-                    onPressed: widget.showDeleteButton
-                        ? widget.onDelete
-                        : widget.onSave,
-                    height: 35,
-                    width: 35,
-                    iconSize: 20,
-                    padding: EdgeInsets.zero,
-                    backgroundColor: Theme.of(context).primaryColorDark,
-                    borderSide: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                    ),
-                    foregroundColor: widget.showDeleteButton
-                        ? Theme.of(context).colorScheme.error
-                        : (widget.car.isFavorited
+                // Save/Delete/Edit buttons
+                if (widget.showSaveButton ||
+                    widget.showDeleteButton ||
+                    widget.showEditButton)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.showEditButton)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: CustomButton.icon(
+                            icon: Icons.edit,
+                            onPressed: widget.onEdit,
+                            height: 35,
+                            width: 35,
+                            iconSize: 20,
+                            padding: EdgeInsets.zero,
+                            backgroundColor: Theme.of(context).primaryColorDark,
+                            borderSide: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                          ),
+                        ),
+                      if (widget.showDeleteButton || widget.showSaveButton)
+                        CustomButton.icon(
+                          icon: widget.showDeleteButton
+                              ? Icons.delete
+                              : Icons.bookmark,
+                          onPressed: widget.showDeleteButton
+                              ? widget.onDelete
+                              : widget.onSave,
+                          height: 35,
+                          width: 35,
+                          iconSize: 20,
+                          padding: EdgeInsets.zero,
+                          backgroundColor: Theme.of(context).primaryColorDark,
+                          borderSide: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                          foregroundColor: widget.showDeleteButton
                               ? Theme.of(context).colorScheme.error
-                              : Theme.of(context).colorScheme.primary),
+                              : (widget.car.isFavorited
+                                    ? Theme.of(context).colorScheme.error
+                                    : Theme.of(context).colorScheme.primary),
+                        ),
+                    ],
                   ),
                 //           SizedBox(
                 //   height: 35,

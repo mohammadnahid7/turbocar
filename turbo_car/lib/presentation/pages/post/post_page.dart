@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/post_car_provider.dart';
 import '../../../data/providers/car_provider.dart';
+import '../../../data/models/car_model.dart';
 import '../../../core/constants/string_constants.dart';
 import '../../../core/constants/car_brands.dart';
 import '../../../core/router/route_names.dart';
@@ -20,7 +21,9 @@ import '../../../core/constants/korean_cities.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
 class PostPage extends ConsumerStatefulWidget {
-  const PostPage({super.key});
+  final CarModel? carToEdit;
+
+  const PostPage({super.key, this.carToEdit});
 
   @override
   ConsumerState<PostPage> createState() => _PostPageState();
@@ -52,6 +55,29 @@ class _PostPageState extends ConsumerState<PostPage> {
     _colorController = TextEditingController();
     _cityController = TextEditingController();
     _stateController = TextEditingController();
+
+    // If editing, initialize form with car data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.carToEdit != null) {
+        final notifier = ref.read(postCarProvider.notifier);
+        notifier.initForEdit(widget.carToEdit!);
+        // Pre-populate text controllers
+        _carModelController.text = widget.carToEdit!.model
+            .split(' ')
+            .skip(1)
+            .join(' ');
+        _mileageController.text = widget.carToEdit!.mileage.toString();
+        _yearController.text = widget.carToEdit!.year.toString();
+        _priceController.text = widget.carToEdit!.price.toStringAsFixed(0);
+        _descriptionController.text = widget.carToEdit!.description;
+        _colorController.text = widget.carToEdit!.color;
+        _cityController.text = widget.carToEdit!.city;
+        _stateController.text = widget.carToEdit!.state;
+      } else {
+        // Clear form for new post
+        ref.read(postCarProvider.notifier).clearForm();
+      }
+    });
   }
 
   @override
@@ -102,8 +128,12 @@ class _PostPageState extends ConsumerState<PostPage> {
     // Listen for success/error messages
     ref.listen<PostCarState>(postCarProvider, (previous, next) {
       if (next.successMessage != null && previous?.successMessage == null) {
-        // Navigate to success page
-        context.go(RouteNames.postSuccess);
+        // For edit mode, go back to my cars; for create, go to success page
+        if (next.successMessage!.contains('updated')) {
+          context.pop(); // Go back to my cars
+        } else {
+          context.go(RouteNames.postSuccess);
+        }
         // Refresh car list
         ref.read(carListProvider.notifier).fetchCars(refresh: true);
         // Clear form
@@ -159,13 +189,15 @@ class _PostPageState extends ConsumerState<PostPage> {
       );
     }
 
+    // Determine page title and button text based on mode
+    final isEditMode = postState.isEditMode;
+    final pageTitle = isEditMode ? 'Edit Car' : StringConstants.postCarTitle;
+    final buttonText = isEditMode ? 'Save Changes' : StringConstants.postButton;
+
     // Authenticated user - show post form
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColorDark,
-      appBar: CustomAppBar(
-        title: StringConstants.postCarTitle,
-        isMainNavPage: true,
-      ),
+      appBar: CustomAppBar(title: pageTitle, isMainNavPage: !isEditMode),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -338,10 +370,13 @@ class _PostPageState extends ConsumerState<PostPage> {
               // Row 5: Image Upload (full width)
               ImagePickerGrid(
                 images: postState.images,
+                existingImageUrls: postState.existingImageUrls,
                 minImages: 1,
                 maxImages: 10,
                 onImageAdded: (image) => postNotifier.addImage(image),
                 onImageRemoved: (index) => postNotifier.removeImage(index),
+                onExistingImageRemoved: (index) =>
+                    postNotifier.removeExistingImage(index),
               ),
               const SizedBox(height: 16),
 
@@ -549,7 +584,7 @@ class _PostPageState extends ConsumerState<PostPage> {
 
               // Row 7: Post Button (full width)
               CustomButton(
-                text: StringConstants.postButton,
+                text: buttonText,
                 isLoading: postState.isLoading,
                 onPressed: () => _submitForm(postNotifier),
               ),

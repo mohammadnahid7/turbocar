@@ -10,8 +10,8 @@ class ApiConstants {
   // static const String baseUrl = 'http://192.168.0.48:3000/api';
   // static const String baseUrl =
   //     'https://turbocar-backend-production.up.railway.app/api';
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-  // static const String baseUrl = 'http://172.30.1.12:3000/api';
+  // static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String baseUrl = 'http://192.168.0.37:3000/api';
   // static const String baseUrl = 'http://172.30.1.12:8080/api';
 
   // WebSocket URL - derived from baseUrl (converts http→ws, https→wss)

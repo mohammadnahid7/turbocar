@@ -245,6 +245,10 @@ func main() {
 		notificationService = nil
 	} else {
 		notificationService = notifService
+		// Set DB for device token lookups
+		notifService.SetDB(database.DB)
+		// Wire notifier to listing service for price change notifications
+		listingService.SetNotifier(notifService)
 	}
 
 	// Initialize chat components

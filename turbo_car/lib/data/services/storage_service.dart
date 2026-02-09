@@ -122,6 +122,17 @@ class StorageService {
     return _prefs?.getString(StorageKeys.fcmToken);
   }
 
+  // Generic string storage (for notifications, etc.)
+  Future<void> write(String key, String value) async {
+    await init();
+    await _prefs?.setString(key, value);
+  }
+
+  Future<String?> read(String key) async {
+    await init();
+    return _prefs?.getString(key);
+  }
+
   // Persistent Saved Cars (Offline/Guest support)
   Future<void> saveSavedCars(List<CarModel> cars) async {
     try {

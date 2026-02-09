@@ -14,6 +14,7 @@ import '../../../core/router/route_names.dart';
 import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/common/car_list_item.dart';
 import '../../widgets/common/confirmation_dialog.dart';
+import '../../../core/services/notification_service.dart';
 
 class SavedPage extends ConsumerStatefulWidget {
   const SavedPage({super.key});
@@ -37,15 +38,37 @@ class _SavedPageState extends ConsumerState<SavedPage> {
         title: StringConstants.savedCars,
         isMainNavPage: true,
       ),
-      body: Column(
-        children: [
-          // Show sync banner for guests
-          if (authState.isGuest) _buildSyncBanner(context),
-          // Saved cars list
-          Expanded(child: _buildSavedCarsList(context, ref, savedCarsState)),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(savedCarsProvider.notifier).refresh();
+        },
+        child: Column(
+          children: [
+            // Show sync banner for guests
+            if (authState.isGuest) _buildSyncBanner(context),
+            // Saved cars list
+            Expanded(child: _buildSavedCarsList(context, ref, savedCarsState)),
+          ],
+        ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to notification stream
+    NotificationService().onNotificationReceived.listen((message) {
+      if (message.data['type'] == 'price_change') {
+        final carId = message.data['car_id'];
+        final newPrice = double.tryParse(message.data['new_price'] ?? '');
+
+        if (carId != null && newPrice != null) {
+          // Update provider
+          ref.read(savedCarsProvider.notifier).updateCarPrice(carId, newPrice);
+        }
+      }
+    });
   }
 
   /// Build the sync banner for guest users

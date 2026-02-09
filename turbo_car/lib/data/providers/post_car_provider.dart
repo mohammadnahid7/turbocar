@@ -16,6 +16,11 @@ class PostCarState {
   final String? successMessage;
   final CarModel? postedCar;
 
+  // Edit mode fields
+  final bool isEditMode;
+  final String? editingCarId;
+  final List<String> existingImageUrls;
+
   // Form fields
   final String carType;
   final String carName;
@@ -38,6 +43,9 @@ class PostCarState {
     this.error,
     this.successMessage,
     this.postedCar,
+    this.isEditMode = false,
+    this.editingCarId,
+    this.existingImageUrls = const [],
     this.carType = '',
     this.carName = '',
     this.carModel = '',
@@ -60,6 +68,9 @@ class PostCarState {
     String? error,
     String? successMessage,
     CarModel? postedCar,
+    bool? isEditMode,
+    String? editingCarId,
+    List<String>? existingImageUrls,
     String? carType,
     String? carName,
     String? carModel,
@@ -85,6 +96,9 @@ class PostCarState {
           ? null
           : (successMessage ?? this.successMessage),
       postedCar: postedCar ?? this.postedCar,
+      isEditMode: isEditMode ?? this.isEditMode,
+      editingCarId: editingCarId ?? this.editingCarId,
+      existingImageUrls: existingImageUrls ?? this.existingImageUrls,
       carType: carType ?? this.carType,
       carName: carName ?? this.carName,
       carModel: carModel ?? this.carModel,
@@ -104,7 +118,9 @@ class PostCarState {
   }
 
   // Validation (only required fields)
+  // In edit mode, existing images count towards validation
   bool get isValid {
+    final hasImages = images.isNotEmpty || existingImageUrls.isNotEmpty;
     return carType.isNotEmpty &&
         carName.isNotEmpty &&
         carModel.isNotEmpty &&
@@ -117,7 +133,7 @@ class PostCarState {
         price! > 0 &&
         description.length >= 20 &&
         city.isNotEmpty &&
-        images.isNotEmpty;
+        hasImages;
   }
 
   // Generate title
@@ -172,6 +188,47 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
     state = state.copyWith(images: newImages);
   }
 
+  // Remove existing image (for edit mode)
+  void removeExistingImage(int index) {
+    final newExistingUrls = [...state.existingImageUrls];
+    newExistingUrls.removeAt(index);
+    state = state.copyWith(existingImageUrls: newExistingUrls);
+  }
+
+  // Initialize for edit mode - pre-populate form with car data
+  void initForEdit(CarModel car) {
+    // Parse make and model from the car data
+    // The backend stores: make = "Toyota", model = "SUV Camry"
+    // We need to extract: carName = "Toyota", carType = "SUV", carModel = "Camry"
+    final modelParts = car.model.split(' ');
+    final carType = modelParts.isNotEmpty ? modelParts.first : '';
+    final carModel = modelParts.length > 1
+        ? modelParts.sublist(1).join(' ')
+        : '';
+
+    state = PostCarState(
+      isEditMode: true,
+      editingCarId: car.id,
+      existingImageUrls: car.images,
+      carType: carType,
+      carName: car.make,
+      carModel: carModel,
+      fuelType: car.fuelType.isNotEmpty ? car.fuelType : 'petrol',
+      mileage: car.mileage,
+      year: car.year,
+      price: car.price.toDouble(),
+      description: car.description,
+      condition: car.condition.isNotEmpty ? car.condition : 'good',
+      transmission: car.transmission.isNotEmpty
+          ? car.transmission
+          : 'automatic',
+      color: car.color,
+      city: car.city,
+      state: car.state,
+      chatOnly: car.chatOnly,
+    );
+  }
+
   // Clear form
   void clearForm() {
     state = PostCarState();
@@ -181,7 +238,7 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
   void clearError() => state = state.copyWith(clearError: true);
   void clearSuccess() => state = state.copyWith(clearSuccess: true);
 
-  // Submit car listing
+  // Submit car listing (create or update)
   Future<bool> submitCar() async {
     if (!state.isValid) {
       state = state.copyWith(
@@ -200,7 +257,7 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
       // Build form data
       final formData = FormData();
 
-      // Add text fields (only required fields)
+      // Add text fields (required fields)
       formData.fields.addAll([
         MapEntry('title', state.generatedTitle),
         MapEntry('description', state.description),
@@ -212,11 +269,24 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
         MapEntry('fuel_type', state.fuelType),
         MapEntry('city', state.city),
         MapEntry('chat_only', state.chatOnly.toString()),
-        // Optional fields are not sent (condition, transmission, color, state, lat, long)
       ]);
 
-      // Add images as multipart files
-      // Server will upload these to S3/R2 storage
+      // Add optional fields only if they have valid values
+      // (PostgreSQL enums reject empty strings)
+      if (state.condition.isNotEmpty) {
+        formData.fields.add(MapEntry('condition', state.condition));
+      }
+      if (state.transmission.isNotEmpty) {
+        formData.fields.add(MapEntry('transmission', state.transmission));
+      }
+      if (state.color.isNotEmpty) {
+        formData.fields.add(MapEntry('color', state.color));
+      }
+      if (state.state.isNotEmpty) {
+        formData.fields.add(MapEntry('state', state.state));
+      }
+
+      // Add new images as multipart files
       for (final image in state.images) {
         formData.files.add(
           MapEntry(
@@ -226,29 +296,47 @@ class PostCarNotifier extends StateNotifier<PostCarState> {
         );
       }
 
-      // Make API call
-      final response = await _dioClient.dio.post(
-        ApiConstants.cars,
-        data: formData,
-        options: Options(contentType: 'multipart/form-data'),
-      );
+      // For edit mode, include existing image URLs that should be kept
+      if (state.isEditMode && state.existingImageUrls.isNotEmpty) {
+        for (final url in state.existingImageUrls) {
+          formData.fields.add(MapEntry('existing_images', url));
+        }
+      }
+
+      // Make API call - POST for create, PUT for update
+      final Response response;
+      if (state.isEditMode && state.editingCarId != null) {
+        response = await _dioClient.dio.put(
+          '${ApiConstants.cars}/${state.editingCarId}',
+          data: formData,
+          options: Options(contentType: 'multipart/form-data'),
+        );
+      } else {
+        response = await _dioClient.dio.post(
+          ApiConstants.cars,
+          data: formData,
+          options: Options(contentType: 'multipart/form-data'),
+        );
+      }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final car = CarModel.fromJson(response.data as Map<String, dynamic>);
-        state = PostCarState(
-          successMessage: 'Car posted successfully!',
-          postedCar: car,
-        );
+        final message = state.isEditMode
+            ? 'Car updated successfully!'
+            : 'Car posted successfully!';
+        state = PostCarState(successMessage: message, postedCar: car);
         return true;
       } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Failed to post car. Please try again.',
-        );
+        final errorMsg = state.isEditMode
+            ? 'Failed to update car. Please try again.'
+            : 'Failed to post car. Please try again.';
+        state = state.copyWith(isLoading: false, error: errorMsg);
         return false;
       }
     } on DioException catch (e) {
-      String errorMessage = 'Failed to post car. Please try again.';
+      String errorMessage = state.isEditMode
+          ? 'Failed to update car. Please try again.'
+          : 'Failed to post car. Please try again.';
       if (e.response?.data != null && e.response?.data['error'] != null) {
         errorMessage = e.response?.data['error'].toString() ?? errorMessage;
       }
