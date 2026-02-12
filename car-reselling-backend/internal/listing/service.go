@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"github.com/yourusername/car-reselling-backend/internal/notification"
 )
 
 // NotifierService is an interface for sending push notifications
@@ -19,12 +20,19 @@ type NotifierService interface {
 	SendToUsers(userIDs []uuid.UUID, title, body string, data map[string]string) error
 }
 
+// NotificationService is an interface for the new notification system
+type NotificationService interface {
+	CreateAndSend(ctx context.Context, userID uuid.UUID, title, message, notifType, imageURL string, data map[string]interface{}) (*notification.Notification, error)
+	CreateAndSendBulk(ctx context.Context, userIDs []uuid.UUID, title, message, notifType, imageURL string, data map[string]interface{}) error
+}
+
 // ListingService struct
 type ListingService struct {
-	repo     ListingRepository
-	storage  StorageService
-	cache    *redis.Client
-	notifier NotifierService
+	repo                ListingRepository
+	storage             StorageService
+	cache               *redis.Client
+	notifier            NotifierService
+	notificationService NotificationService
 }
 
 // NewService creates a new ListingService
@@ -36,9 +44,14 @@ func NewService(repo ListingRepository, storage StorageService, cache *redis.Cli
 	}
 }
 
-// SetNotifier sets the notification service
+// SetNotifier sets the notification service (legacy FCM notifier)
 func (s *ListingService) SetNotifier(n NotifierService) {
 	s.notifier = n
+}
+
+// SetNotificationService sets the new notification service with WebSocket support
+func (s *ListingService) SetNotificationService(ns NotificationService) {
+	s.notificationService = ns
 }
 
 // CreateListing handles creating a new car listing
@@ -304,9 +317,9 @@ func (s *ListingService) UpdateListing(ctx context.Context, carID, userID uuid.U
 	s.cache.Del(ctx, fmt.Sprintf("cache:car:%s", carID))
 
 	// 7. Send price change notifications (async, don't block response)
-	log.Printf("DEBUG: UpdateListing - notifier=%v, reqPrice=%v, oldPrice=%v, newPrice=%v",
-		s.notifier != nil, req.Price, oldPrice, car.Price)
-	if s.notifier != nil && oldPrice != car.Price {
+	log.Printf("DEBUG: UpdateListing - notificationService=%v, notifier=%v, reqPrice=%v, oldPrice=%v, newPrice=%v",
+		s.notificationService != nil, s.notifier != nil, req.Price, oldPrice, car.Price)
+	if (s.notificationService != nil || s.notifier != nil) && oldPrice != car.Price {
 		log.Printf("DEBUG: Triggering price change notification for car %s", carID)
 
 		var carImage string
@@ -365,19 +378,43 @@ func (s *ListingService) sendPriceChangeNotifications(carID, ownerID uuid.UUID, 
 	title := "Price Alert! 🔔"
 	body := fmt.Sprintf("A car you saved has %s! %s: $%.0f → $%.0f", direction, carTitle, oldPrice, newPrice)
 
-	data := map[string]string{
-		"type":         "price_change",
-		"car_id":       carID.String(),
-		"old_price":    fmt.Sprintf("%.0f", oldPrice),
-		"new_price":    fmt.Sprintf("%.0f", newPrice),
-		"car_image":    carImage,
-		"click_action": "FLUTTER_NOTIFICATION_CLICK",
+	// Prepare data for new notification system (map[string]interface{})
+	dataMap := map[string]interface{}{
+		"car_id":    carID.String(),
+		"old_price": oldPrice,
+		"new_price": newPrice,
+		"car_title": carTitle,
 	}
 
-	if err := s.notifier.SendToUsers(validUserIDs, title, body, data); err != nil {
-		log.Printf("Failed to send price change notifications: %v", err)
-	} else {
-		log.Printf("Sent price change notifications to %d users for car %s", len(validUserIDs), carID)
+	// Use new notification service if available (with WebSocket support)
+	if s.notificationService != nil {
+		// Convert validUserIDs to []uuid.UUID for the bulk method
+		ctx := context.Background()
+		err := s.notificationService.CreateAndSendBulk(ctx, validUserIDs, title, body, "price_change", carImage, dataMap)
+		if err != nil {
+			log.Printf("Failed to send price change notifications via new service: %v", err)
+		} else {
+			log.Printf("Sent price change notifications to %d users for car %s via new service", len(validUserIDs), carID)
+		}
+		return
+	}
+
+	// Fallback to legacy notifier (FCM only)
+	if s.notifier != nil {
+		data := map[string]string{
+			"type":         "price_change",
+			"car_id":       carID.String(),
+			"old_price":    fmt.Sprintf("%.0f", oldPrice),
+			"new_price":    fmt.Sprintf("%.0f", newPrice),
+			"car_image":    carImage,
+			"click_action": "FLUTTER_NOTIFICATION_CLICK",
+		}
+
+		if err := s.notifier.SendToUsers(validUserIDs, title, body, data); err != nil {
+			log.Printf("Failed to send price change notifications: %v", err)
+		} else {
+			log.Printf("Sent price change notifications to %d users for car %s", len(validUserIDs), carID)
+		}
 	}
 }
 

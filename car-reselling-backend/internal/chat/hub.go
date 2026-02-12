@@ -182,3 +182,55 @@ func (h *Hub) GetOnlineCount() int {
 	defer h.mu.RUnlock()
 	return len(h.clients)
 }
+
+// SendNotification sends a notification to a specific user via WebSocket
+// Returns true if the user was online and notification was sent, false otherwise
+func (h *Hub) SendNotification(userID uuid.UUID, notificationData map[string]interface{}) bool {
+	h.mu.RLock()
+	client, ok := h.clients[userID]
+	h.mu.RUnlock()
+
+	if !ok {
+		return false
+	}
+
+	msg := &WSMessage{
+		Type:      "notification",
+		Data:      notificationData,
+		Timestamp: time.Now(),
+	}
+
+	select {
+	case client.send <- msg:
+		return true
+	default:
+		// Buffer full, couldn't send
+		return false
+	}
+}
+
+// SendNotificationCount sends the unread notification count to a specific user
+func (h *Hub) SendNotificationCount(userID uuid.UUID, count int64) bool {
+	h.mu.RLock()
+	client, ok := h.clients[userID]
+	h.mu.RUnlock()
+
+	if !ok {
+		return false
+	}
+
+	msg := &WSMessage{
+		Type: "notification:unread",
+		Data: map[string]interface{}{
+			"count": count,
+		},
+		Timestamp: time.Now(),
+	}
+
+	select {
+	case client.send <- msg:
+		return true
+	default:
+		return false
+	}
+}

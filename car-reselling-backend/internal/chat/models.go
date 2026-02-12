@@ -64,13 +64,14 @@ type UserDevice struct {
 
 // WSMessage is the structure for WebSocket messages
 type WSMessage struct {
-	Type           string    `json:"type"` // message, typing, read_receipt
-	ConversationID uuid.UUID `json:"conversation_id"`
-	SenderID       uuid.UUID `json:"sender_id"`
-	Content        string    `json:"content,omitempty"`
-	MessageType    string    `json:"message_type,omitempty"`
-	MediaURL       string    `json:"media_url,omitempty"`
-	Timestamp      time.Time `json:"timestamp"`
+	Type           string                 `json:"type"` // message, typing, read_receipt, notification
+	ConversationID uuid.UUID              `json:"conversation_id,omitempty"`
+	SenderID       uuid.UUID              `json:"sender_id,omitempty"`
+	Content        string                 `json:"content,omitempty"`
+	MessageType    string                 `json:"message_type,omitempty"`
+	MediaURL       string                 `json:"media_url,omitempty"`
+	Data           map[string]interface{} `json:"data,omitempty"` // Flexible data for notifications and other events
+	Timestamp      time.Time              `json:"timestamp"`
 }
 
 // Table name overrides for GORM
