@@ -1,0 +1,134 @@
+﻿So I am going to make an android app with flutter  on cursor for my 2nd hadn car buying selling. now I am going to write everything about the app, whats included etc and you make a proper full plan for cursor so that it makes the whole app backbone. Note: 
+1. cursor doesn't need to design the app. I will do that. it just need to create pages or make a system that when I finish the design, I just place the variables and it shows necessary informations. 
+2. The data will be retrieved from server side, take note of that, I will also mention below.
+3. there will be authentications, session, guest mode, state management etc. I will also mention what to use. 
+ 
+App pages and features:
+
+
+Pages:
+1. Homepage
+2. SavedPage (saved cars)
+3. ChatPage
+4. ProfilePage
+5. NotificationPage
+6. PostPage
+7. ShowPostPage
+8. Login/Signup Page
+(After analyzing other features, add necessary pages)
+
+
+1. HomePage
+Description: This is the page a person will see after login/signup/guestmode. 
+Features: this page will have these elements
+a. Profile name (top left)
+b. Notification Button (top right, click to open notification page)
+c. Search bar (Below profile, left side, to search cars)(container 2)
+d. Filter button (Below profile, right side, filter cars with properties)(container 2)
+e. Image carousel (Below search bar, to show image ads with a link button)
+f. Button group (Below carousel, buttons of car company, to filter cars by company name)
+g. List (Below #f, show all/filtered/searched cars in list)
+h. Navbar (Universal) (Bottom of screen, Nagivate to Home, Saved, Post, Chat, Profile pages).
+
+
+2. SavedPage
+Description: This page will show all saved cars of the person.
+Features: this page will have these elements
+a. List (List of saved cars. only Guestmode person will see login/signup button)
+b. Delete Modal (On top of everything, even navbar) (when a person click on delete button in the car list item, this confirmation modal will show)
+
+
+
+
+3. Will be declared soon, make an empty page
+4. ProfilePage
+Description: This is the page a person can see his profile. 
+Features: this page will have these elements
+1. Profile Picture (Top left) (container 1)
+2. Profile name (middle) (container 1)
+3. Edit profile Button (top right, to edit profile information) (container 1)
+4. List of settings (Below profile container, text-icon button of setting, each button will take to new page accordingly)
+5. Guestmode person will see login/signup button
+
+
+5. Will be declared soon, make an empty page
+6. Will be declared soon, make an empty page
+7. Will be declared soon, make an empty page
+8. Login/Signup Page
+Description: This is the page a person can login/signup/guestmode 
+Features: this page will have these elements
+1. Title text
+2. Button group (Login and signup button, clicking one can open different groups of form, basically a navbar style)
+3. Form (according to login/signup)
+4. Login with google button (Show for both)
+5. Login/Signup Button (Bottom, show accordingly)
+
+
+
+
+Below are the detailed elements for each part that I didnt mention earlier.
+
+1.d. Filter button
+1. Dropdown menu (select cities in korea)
+2. Button group (select car category. E.g. sedan, sports)
+3. Price Range (select price range, this will be a slider with 2 pointer, one for starting price, one for ending price, two text on the two bottom of the slider will show both slider value, value increase/decrease by 100k)
+4. Sort button group (sort list according to price high to low, low to high, millage, year manufactured)
+5. Reset,Apply button (reset filter setting or apply and search for cars)
+
+
+1.e. Image carousel (image carousel with button to go to the car post page)
+1.g. List (Universal) (car item list, use everywhere)
+1. Car image at the left.
+2. On right, car title, with a badge of car company name
+3. Below title, excerpt of description
+4. Below excerpt, car price.
+5. Right side top, save button, bottom, share button
+6. On SavedPage, save button will be changed to delete button and trigger the modal. See 2.b
+
+
+2.b. Delete Modal (Confirmation modal to delete the saved car from saved)
+1. Title (Do you want to remove this?)
+2. Car item card (Universal car item card, but no saved and share button)
+3. Cancel, Remove Button (to cancel and remove confirm button)
+
+
+4.d. List of settings (Settings list, each list item will be icon on left, name middle, extra on right)
+1. Dark mode (toggle button to turn on/off dark mode)
+2. My Car (take to another page, show list of cars posted by me, show delete button instead of saved button, clicking it will show similar modal like delete from favorite, just it is deleting my car post)
+3. Language (Open modal of list of languages, select one)
+4. Change password (take to another page, there will be current password, new password and confirm password field, save button at bottom)
+5. Contact Us (take to another page, show 2 cards, for phone number and email, both has button to go for the action accordingly)
+6. About Us (take to a new page, show text about our information)
+7. Logout (logout from the profile)
+
+
+8.c. Form
+1. Page title (welcome to the app)
+2. Login/Signup toggle button (clicking each button will open separate group of input fields, mush like tabular format)
+3. For login, show email, pass field. Below pass, show reset pass button
+4. For signup, show 2 text field, DOB, gender dropdown, email, pass, confirm pass field
+5. Login/Register Button (login/register button according to the tab)
+
+
+Important Things:
+1. Password input box will have eye toggle button to see/hide password. 
+2. Password must check validation
+3. A small text will show below the password box to tell if the password is missing validation.
+4. Create empty page where necessary for future addition of features/elements
+5. Add dummy text to test the app first.
+6. Data will be retrieved from backend, so write state managements, data fetching efficiently
+7. organize the data coherently. Api links, texts shown throughout the app, other aspects must be organized well for future development.
+8. Comments are must, specially for places where later design will be connected to the derived data
+9. Documentation is must, how the app built, architecture, frame, flow of the app, how the app retrieve data and all necessary informations will be organized in one place.
+10. MUST FOLLOW THE ENTERPRISE LEVEL RULE AND STRUCTURE.
+
+Architecture to use:
+State: Riverpod
+HTTP: Dio
+Storage: flutter_secure_storage + shared_preferences
+Navigation: go_router
+Images: image_picker + cached_network_image
+Chat: socket_io_client
+Notifications: firebase_messaging
+
+Note: if you cant see some architecture I didnt mention, just write empty code, later I will tell you when to update.

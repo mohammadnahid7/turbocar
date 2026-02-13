@@ -1,0 +1,967 @@
+﻿Project Overview
+A second-hand car buying/selling Android app built with Flutter, following enterprise-level architecture and clean code principles.
+________________
+
+
+Phase 1: Project Setup & Architecture Foundation
+1.1 Initial Project Configuration
+Create a new Flutter project with the following structure:
+- Project name: car_marketplace (or your preferred name)
+- Minimum SDK: Android API 21+
+- Target SDK: Latest stable
+1.2 Dependencies Installation
+Add the following packages to pubspec.yaml:
+
+
+State Management:
+- flutter_riverpod: ^2.4.0
+- riverpod_annotation: ^2.3.0
+
+
+HTTP & API:
+- dio: ^5.4.0
+- retrofit: ^4.0.0
+- json_annotation: ^4.8.1
+
+
+Storage:
+- flutter_secure_storage: ^9.0.0
+- shared_preferences: ^2.2.0
+
+
+Navigation:
+- go_router: ^13.0.0
+
+
+Images:
+- image_picker: ^1.0.0
+- cached_network_image: ^3.3.0
+
+
+Real-time Communication:
+- socket_io_client: ^2.0.0
+
+
+Notifications:
+- firebase_core: ^2.24.0
+- firebase_messaging: ^14.7.0
+
+
+Dev Dependencies:
+- build_runner: ^2.4.0
+- riverpod_generator: ^2.3.0
+- retrofit_generator: ^8.0.0
+- json_serializable: ^6.7.0
+- flutter_launcher_icons: ^0.13.0
+1.3 Folder Structure
+Create the following directory structure:
+
+
+lib/
+├── main.dart
+├── app.dart
+├── core/
+│   ├── constants/
+│   │   ├── api_constants.dart
+│   │   ├── app_constants.dart
+│   │   ├── storage_keys.dart
+│   │   └── string_constants.dart
+│   ├── theme/
+│   │   ├── app_colors.dart
+│   │   ├── app_theme.dart
+│   │   └── app_text_styles.dart
+│   ├── utils/
+│   │   ├── validators.dart
+│   │   ├── helpers.dart
+│   │   └── extensions.dart
+│   ├── network/
+│   │   ├── dio_client.dart
+│   │   ├── api_interceptor.dart
+│   │   └── network_exceptions.dart
+│   └── router/
+│       ├── app_router.dart
+│       └── route_names.dart
+├── data/
+│   ├── models/
+│   │   ├── user_model.dart
+│   │   ├── car_model.dart
+│   │   ├── chat_model.dart
+│   │   └── notification_model.dart
+│   ├── repositories/
+│   │   ├── auth_repository.dart
+│   │   ├── car_repository.dart
+│   │   ├── chat_repository.dart
+│   │   └── user_repository.dart
+│   ├── services/
+│   │   ├── api_service.dart
+│   │   ├── storage_service.dart
+│   │   ├── socket_service.dart
+│   │   └── firebase_service.dart
+│   └── providers/
+│       ├── auth_provider.dart
+│       ├── car_provider.dart
+│       ├── theme_provider.dart
+│       └── user_provider.dart
+├── domain/
+│   ├── entities/
+│   │   ├── user.dart
+│   │   ├── car.dart
+│   │   └── chat.dart
+│   └── usecases/
+│       ├── auth_usecases.dart
+│       └── car_usecases.dart
+└── presentation/
+    ├── pages/
+    │   ├── home/
+    │   │   ├── home_page.dart
+    │   │   └── widgets/
+    │   ├── saved/
+    │   │   ├── saved_page.dart
+    │   │   └── widgets/
+    │   ├── chat/
+    │   │   ├── chat_page.dart
+    │   │   └── widgets/
+    │   ├── profile/
+    │   │   ├── profile_page.dart
+    │   │   ├── my_cars_page.dart
+    │   │   ├── change_password_page.dart
+    │   │   ├── contact_us_page.dart
+    │   │   ├── about_us_page.dart
+    │   │   └── widgets/
+    │   ├── notification/
+    │   │   ├── notification_page.dart
+    │   │   └── widgets/
+    │   ├── post/
+    │   │   ├── post_page.dart
+    │   │   └── widgets/
+    │   ├── show_post/
+    │   │   ├── show_post_page.dart
+    │   │   └── widgets/
+    │   └── auth/
+    │       ├── login_signup_page.dart
+    │       └── widgets/
+    └── widgets/
+        ├── common/
+        │   ├── custom_button.dart
+        │   ├── custom_text_field.dart
+        │   ├── loading_indicator.dart
+        │   ├── error_widget.dart
+        │   ├── car_list_item.dart
+        │   ├── custom_app_bar.dart
+        │   ├── bottom_nav_bar.dart
+        │   └── confirmation_dialog.dart
+        └── specific/
+            ├── filter_bottom_sheet.dart
+            ├── image_carousel.dart
+            ├── company_button_group.dart
+            └── language_selector_modal.dart
+
+
+assets/
+├── images/
+├── icons/
+└── fonts/
+
+
+test/
+________________
+
+
+Phase 2: Core Implementation
+2.1 Constants Setup
+Create api_constants.dart:
+- Base URL placeholder
+- API endpoints (login, signup, cars, profile, etc.)
+- Timeout durations
+- Header keys
+
+
+Create app_constants.dart:
+- App name
+- Version
+- Default values
+- Pagination limits
+- Image size limits
+- Password validation rules
+
+
+Create storage_keys.dart:
+- Token key
+- User data key
+- Theme preference key
+- Language key
+- Guest mode key
+
+
+Create string_constants.dart:
+- All UI text strings organized by screens
+- Error messages
+- Validation messages
+- Success messages
+- Button labels
+- Placeholders
+2.2 Theme Implementation
+Create app_colors.dart:
+- Define light mode colors
+- Define dark mode colors
+- Primary, secondary, accent colors
+- Background colors
+- Text colors
+- Error, success, warning colors
+
+
+Create app_theme.dart:
+- Light theme data
+- Dark theme data
+- Custom theme properties
+- Component themes (button, text field, card, etc.)
+
+
+Create app_text_styles.dart:
+- Heading styles (h1, h2, h3, etc.)
+- Body text styles
+- Button text styles
+- Caption styles
+2.3 Network Layer
+Create dio_client.dart:
+- Initialize Dio instance
+- Configure base options
+- Add interceptors
+- Implement request/response logging
+
+
+Create api_interceptor.dart:
+- Add authentication token to headers
+- Handle token refresh logic
+- Log requests and responses
+- Handle network errors
+
+
+Create network_exceptions.dart:
+- Define custom exception classes
+- Handle different HTTP status codes
+- Parse error messages from API
+- User-friendly error messages
+2.4 Storage Services
+Create storage_service.dart:
+- Implement secure storage methods (tokens, sensitive data)
+- Implement shared preferences methods (settings, theme)
+- Methods: saveToken, getToken, deleteToken
+- Methods: saveUserData, getUserData, clearUserData
+- Methods: saveThemePreference, getThemePreference
+- Methods: saveLanguage, getLanguage
+- Methods: setGuestMode, isGuestMode
+________________
+
+
+Phase 3: Data Layer
+3.1 Models Creation
+Create user_model.dart:
+- Properties: id, name, email, phone, dateOfBirth, gender, profilePicture, createdAt
+- fromJson and toJson methods
+- copyWith method
+
+
+Create car_model.dart:
+- Properties: id, title, description, price, year, mileage, company, category, city, images[], userId, isSaved, createdAt, updatedAt
+- fromJson and toJson methods
+- copyWith method
+
+
+Create chat_model.dart:
+- Properties: id, senderId, receiverId, message, timestamp, isRead
+- fromJson and toJson methods
+
+
+Create notification_model.dart:
+- Properties: id, title, message, type, isRead, createdAt, data
+- fromJson and toJson methods
+3.2 API Service
+Create api_service.dart using Retrofit:
+- Authentication endpoints:
+  - POST /auth/login
+  - POST /auth/signup
+  - POST /auth/google-login
+  - POST /auth/forgot-password
+  - POST /auth/logout
+
+
+- User endpoints:
+  - GET /user/profile
+  - PUT /user/profile
+  - PUT /user/change-password
+
+
+- Car endpoints:
+  - GET /cars (with query params: city, category, priceMin, priceMax, sortBy, page, limit)
+  - GET /cars/:id
+  - POST /cars
+  - PUT /cars/:id
+  - DELETE /cars/:id
+  - GET /cars/my-cars
+  - GET /cars/saved
+
+
+- Saved/Favorite endpoints:
+  - POST /favorites/:carId
+  - DELETE /favorites/:carId
+
+
+- Chat endpoints:
+  - GET /chats
+  - GET /chats/:userId
+
+
+- Notification endpoints:
+  - GET /notifications
+  - PUT /notifications/:id/read
+3.3 Repositories
+Create auth_repository.dart:
+- login(email, password)
+- signup(userData)
+- googleLogin(googleToken)
+- forgotPassword(email)
+- logout()
+- getCurrentUser()
+- updateProfile(userData)
+- changePassword(currentPassword, newPassword)
+
+
+Create car_repository.dart:
+- fetchCars(filters)
+- fetchCarById(id)
+- createCar(carData)
+- updateCar(id, carData)
+- deleteCar(id)
+- fetchMyCars()
+- fetchSavedCars()
+- saveCar(carId)
+- unsaveCar(carId)
+
+
+Create user_repository.dart:
+- fetchProfile()
+- updateProfile(userData)
+
+
+Create chat_repository.dart:
+- fetchChats()
+- fetchMessages(userId)
+- sendMessage(userId, message)
+________________
+
+
+Phase 4: State Management
+4.1 Providers Setup
+Create auth_provider.dart using Riverpod:
+- AuthState class (loading, authenticated, unauthenticated, guest, error)
+- AuthNotifier extending StateNotifier<AuthState>
+- Methods:
+  - login(email, password)
+  - signup(userData)
+  - googleLogin()
+  - logout()
+  - switchToGuestMode()
+  - checkAuthStatus() // Check if user is logged in on app start
+- authProvider exposing StateNotifierProvider
+
+
+Create car_provider.dart:
+- CarListState class (loading, loaded, error)
+- CarListNotifier extending StateNotifier
+- Methods:
+  - fetchCars(filters)
+  - searchCars(query)
+  - applyFilters(filterData)
+  - resetFilters()
+- carListProvider
+
+
+Create saved_cars_provider.dart:
+- SavedCarsState class
+- Methods:
+  - fetchSavedCars()
+  - toggleSave(carId)
+  - removeSavedCar(carId)
+- savedCarsProvider
+
+
+Create theme_provider.dart:
+- ThemeMode state
+- toggleTheme()
+- loadThemePreference()
+- themeProvider
+
+
+Create filter_provider.dart:
+- FilterState class (city, category, priceRange, sortBy)
+- Methods to update each filter
+- resetFilters()
+- filterProvider
+
+
+Create user_provider.dart:
+- UserState class
+- fetchUserProfile()
+- updateProfile()
+- userProvider
+________________
+
+
+Phase 5: Navigation & Routing
+5.1 Router Configuration
+Create app_router.dart using go_router:
+- Define route names as constants
+- Configure routes:
+  - '/' → Check auth and redirect to home or login
+  - '/home' → HomePage
+  - '/saved' → SavedPage
+  - '/chat' → ChatPage (placeholder)
+  - '/profile' → ProfilePage
+  - '/notification' → NotificationPage (placeholder)
+  - '/post' → PostPage (placeholder)
+  - '/post/:id' → ShowPostPage (placeholder)
+  - '/login' → LoginSignupPage
+  - '/my-cars' → MyCarsPage
+  - '/change-password' → ChangePasswordPage
+  - '/contact-us' → ContactUsPage
+  - '/about-us' → AboutUsPage
+
+
+- Implement redirect logic:
+  - If not authenticated and not guest → redirect to login
+  - If authenticated trying to access login → redirect to home
+
+
+- Implement navigation guards for protected routes
+________________
+
+
+Phase 6: UI Implementation
+6.1 Common Widgets
+Create custom_button.dart:
+- Properties: text, onPressed, isLoading, backgroundColor, textColor, width, height
+- Show loading indicator when isLoading is true
+- Handle disabled state
+
+
+Create custom_text_field.dart:
+- Properties: label, hint, controller, obscureText, validator, keyboardType, maxLines, prefixIcon, suffixIcon
+- For password fields: add eye icon to toggle visibility
+- Show validation error below field
+- Custom styling
+
+
+Create car_list_item.dart (Universal car card):
+- Properties: car object, showSaveButton, showDeleteButton, showShareButton, onTap, onSave, onDelete, onShare
+- Layout:
+  - Left: Car image (cached_network_image with placeholder)
+  - Right top: Title with company badge
+  - Right middle: Description excerpt (max 2 lines)
+  - Right bottom: Price
+  - Far right top: Save/Delete button
+  - Far right bottom: Share button (if shown)
+- Add comments: "// Connect your design elements here"
+
+
+Create bottom_nav_bar.dart:
+- 5 navigation items: Home, Saved, Post, Chat, Profile
+- Current route highlighting
+- OnTap navigation using go_router
+- Icons for each tab
+
+
+Create confirmation_dialog.dart:
+- Properties: title, content widget, onConfirm, onCancel, confirmText, cancelText
+- Used for delete confirmations
+- Can accept any widget as content
+6.2 Specific Widgets
+Create filter_bottom_sheet.dart:
+- City dropdown (populated from constants or API)
+- Car category button group (Sedan, Sports, SUV, etc.)
+- Price range slider (RangeSlider with 2 thumbs)
+  - Display min and max values below slider
+  - Step value: 100,000
+- Sort options button group (Price High-Low, Low-High, Mileage, Year)
+- Reset and Apply buttons at bottom
+- Connect to filter_provider
+
+
+Create image_carousel.dart:
+- Properties: images list with link data
+- Auto-scroll carousel
+- Indicator dots
+- OnTap navigate to car post page
+- Add comment: "// Ad images will be fetched from API"
+
+
+Create company_button_group.dart:
+- Horizontal scrollable button list
+- Company logos/names as buttons
+- OnTap filter cars by company
+- Connect to filter_provider
+6.3 Page Implementations
+Create login_signup_page.dart:
+- Page structure:
+  - App title/logo at top
+  - Tab bar with Login/Signup tabs
+  - TabBarView with two forms
+  
+- Login Form:
+  - Email field
+  - Password field with eye toggle
+  - "Forgot Password?" button below password
+  - Login with Google button
+  - Login button at bottom
+  - "Continue as Guest" button
+  
+- Signup Form:
+  - Name field (2 text fields if first/last name separate)
+  - Date of Birth picker
+  - Gender dropdown
+  - Email field
+  - Password field with validation
+  - Confirm password field
+  - Validation text below password showing requirements
+  - Login with Google button
+  - Signup button at bottom
+  - "Continue as Guest" button
+
+
+- Password validation:
+  - Min 8 characters
+  - At least 1 uppercase
+  - At least 1 lowercase
+  - At least 1 number
+  - At least 1 special character
+  - Show requirements below field with check/cross indicators
+
+
+- Connect to auth_provider
+- Show loading indicator during auth
+- Handle errors with snackbar/dialog
+
+
+Create home_page.dart:
+- Structure:
+  - Custom AppBar:
+    - Left: User name (from user_provider)
+    - Right: Notification icon button
+  - Body:
+    - Search bar (left) and Filter button (right) in a row
+    - Image carousel
+    - Company button group (horizontal scroll)
+    - Car list (ListView.builder)
+      - Show shimmer loading effect while fetching
+      - Use car_list_item widget
+      - Implement pagination (load more on scroll)
+      - Pull to refresh
+  - Bottom: bottom_nav_bar
+
+
+- Connect to:
+  - car_provider for car list
+  - filter_provider for filtering
+  - auth_provider for user name
+  
+- Search functionality:
+  - Debounced search (wait 500ms after typing stops)
+  - Search in title and description
+  
+- Filter button:
+  - Show filter_bottom_sheet as modal
+
+
+- Add comments throughout: "// Design will be connected here"
+
+
+Create saved_page.dart:
+- If not guest:
+  - Show list of saved cars using car_list_item
+  - Replace save button with delete button
+  - On delete tap: show confirmation_dialog with car preview
+  - Connect to saved_cars_provider
+  - Pull to refresh
+  - Empty state: "No saved cars yet" with icon
+  
+- If guest:
+  - Show message: "Please login to save cars"
+  - Show Login/Signup button
+  
+- Bottom: bottom_nav_bar
+
+
+Create profile_page.dart:
+- If not guest:
+  - Top container:
+    - Profile picture (circular, tap to change)
+    - Name in center
+    - Edit profile button (top right)
+  
+  - Settings list (ListView):
+    - Dark Mode (trailing: Switch widget connected to theme_provider)
+    - My Cars (trailing: arrow icon, navigate to my_cars_page)
+    - Language (trailing: current language + arrow, show language_selector_modal)
+    - Change Password (trailing: arrow, navigate to change_password_page)
+    - Contact Us (trailing: arrow, navigate to contact_us_page)
+    - About Us (trailing: arrow, navigate to about_us_page)
+    - Logout (trailing: logout icon, show confirmation dialog)
+  
+- If guest:
+  - Show Login/Signup button prominently
+  - Show limited settings (Dark Mode, Language, About Us)
+  
+- Bottom: bottom_nav_bar
+
+
+Create my_cars_page.dart:
+- AppBar with back button and title "My Cars"
+- List of cars posted by user
+- Use car_list_item with delete button
+- On delete: show confirmation_dialog
+- Empty state: "You haven't posted any cars yet"
+- FAB to navigate to post_page
+
+
+Create change_password_page.dart:
+- AppBar with back button and title
+- Form:
+  - Current password field
+  - New password field (with validation)
+  - Confirm new password field
+  - Validation text below new password
+  - Save button at bottom
+- Connect to auth_provider
+- Show success message and navigate back on success
+
+
+Create contact_us_page.dart:
+- AppBar with back button and title
+- Two cards:
+  - Phone card:
+    - Icon
+    - Phone number
+    - Call button (launches phone dialer)
+  - Email card:
+    - Icon
+    - Email address
+    - Email button (launches email app)
+
+
+Create about_us_page.dart:
+- AppBar with back button and title
+- Scrollable content:
+  - App logo
+  - App name and version
+  - Description text about the app
+  - Company information
+  - Terms and conditions link
+  - Privacy policy link
+- Add placeholder text for now
+
+
+Create chat_page.dart (empty placeholder):
+- AppBar with title "Chats"
+- Center: Text "Chat feature coming soon"
+- Bottom: bottom_nav_bar
+- Add TODO comment
+
+
+Create notification_page.dart (empty placeholder):
+- AppBar with back button and title
+- Center: Text "Notifications feature coming soon"
+- Add TODO comment
+
+
+Create post_page.dart (empty placeholder):
+- AppBar with back button and title "Post Car"
+- Center: Text "Post feature coming soon"
+- Bottom: bottom_nav_bar
+- Add TODO comment
+
+
+Create show_post_page.dart (empty placeholder):
+- AppBar with back button
+- Center: Text "Car details coming soon"
+- Add TODO comment for car ID parameter
+________________
+
+
+Phase 7: Utilities & Helpers
+7.1 Validators
+Create validators.dart:
+- validateEmail(String email)
+- validatePassword(String password) → returns Map with requirements status
+- validatePhone(String phone)
+- validateRequired(String value, String fieldName)
+- validateDateOfBirth(DateTime dob)
+- validateConfirmPassword(String password, String confirmPassword)
+7.2 Helpers
+Create helpers.dart:
+- formatPrice(int price) → "₩1,000,000" format
+- formatDate(DateTime date)
+- showSnackBar(context, message, type)
+- showLoadingDialog(context)
+- hideLoadingDialog(context)
+- shareContent(String content)
+- launchURL(String url)
+- launchPhone(String phone)
+- launchEmail(String email)
+7.3 Extensions
+Create extensions.dart:
+- String extensions:
+  - capitalize()
+  - isValidEmail()
+  - isValidPhone()
+  
+- DateTime extensions:
+  - toFormattedString()
+  - isToday()
+  - isYesterday()
+  
+- BuildContext extensions:
+  - showSuccessSnackBar(message)
+  - showErrorSnackBar(message)
+  - showLoadingDialog()
+  - hideDialog()
+________________
+
+
+Phase 8: Service Implementations
+8.1 Socket Service (Placeholder)
+Create socket_service.dart:
+- Initialize socket connection
+- Connect/disconnect methods
+- Listen to events (placeholder)
+- Emit events (placeholder)
+- Add TODO comments for future chat implementation
+8.2 Firebase Service
+Create firebase_service.dart:
+- Initialize Firebase
+- Request notification permissions
+- Get FCM token
+- Handle foreground notifications
+- Handle background notifications
+- Store notification token to server (placeholder)
+- Add TODO comments
+________________
+
+
+Phase 9: Main App Setup
+9.1 Main Entry Point
+Create main.dart:
+- Initialize Firebase
+- Initialize providers (ProviderScope)
+- Check authentication status
+- Run app
+
+
+Create app.dart:
+- MaterialApp.router configuration
+- Connect go_router
+- Connect theme_provider for light/dark theme
+- Set app title
+- Configure theme data
+________________
+
+
+Phase 10: Documentation
+10.1 Create README.md
+Include:
+- Project overview
+- Features list
+- Architecture explanation
+- Folder structure explanation
+- Setup instructions
+- How to run the app
+- API integration guide
+- State management flow
+- Navigation flow
+- How to add new features
+- Coding conventions followed
+10.2 Create ARCHITECTURE.md
+Include:
+- Detailed architecture diagram (describe in text)
+- Layer responsibilities:
+  - Presentation layer
+  - Domain layer
+  - Data layer
+- State management flow
+- Navigation flow
+- Data flow from API to UI
+- Error handling strategy
+- Authentication flow
+- Caching strategy
+10.3 Create API_INTEGRATION.md
+Include:
+- API base URL setup
+- How to update endpoints
+- Request/response format examples
+- Authentication token handling
+- Error response handling
+- How to test with mock data
+10.4 Create DESIGN_INTEGRATION.md
+Include:
+- Where to add design elements
+- How to replace dummy data with design
+- Styling guide
+- Theme customization
+- Widget customization
+- Image asset integration
+- Font integration
+10.5 Code Comments
+Add comprehensive comments throughout:
+- "// TODO: Connect your design here"
+- "// TODO: Replace with actual API endpoint"
+- "// TODO: Add your styling"
+- "// Data will come from API: [field names]"
+- "// This function handles [specific action]"
+- Explain complex logic
+- Document all functions and classes
+________________
+
+
+Phase 11: Testing Setup
+11.1 Test Structure
+Create test folders:
+- test/unit/
+- test/widget/
+- test/integration/
+
+
+Add placeholder test files:
+- auth_test.dart (unit test for auth logic)
+- car_repository_test.dart
+- home_page_test.dart (widget test)
+
+
+Add TODO comments in each test file for future implementation
+________________
+
+
+Phase 12: Configuration Files
+12.1 Analysis Options
+Create analysis_options.yaml:
+- Enable strict linting
+- Configure lint rules
+- Set formatting rules
+12.2 Environment Configuration
+Create .env file structure (document in README):
+- API_BASE_URL=
+- GOOGLE_CLIENT_ID=
+- FIREBASE_API_KEY=
+
+
+Add instructions for environment setup
+________________
+
+
+Implementation Order
+Execute in this sequence:
+1. Project Setup (Phase 1)
+   * Create project structure
+   * Add dependencies
+   * Setup folders
+2. Core Layer (Phase 2)
+   * Constants
+   * Theme
+   * Network
+   * Storage
+3. Data Layer (Phase 3)
+   * Models
+   * API service
+   * Repositories
+4. State Management (Phase 4)
+   * All providers
+5. Navigation (Phase 5)
+   * Router setup
+6. Common Widgets (Phase 6.1)
+   * Reusable components
+7. Specific Widgets (Phase 6.2)
+   * Feature-specific widgets
+8. Pages (Phase 6.3)
+   * All screens in order:
+      1. Login/Signup
+      2. Home
+      3. Saved
+      4. Profile
+      5. Sub-pages
+      6. Placeholder pages
+9. Utilities (Phase 7)
+   * Validators, helpers, extensions
+10. Services (Phase 8)
+   * Socket, Firebase
+11. Main App (Phase 9)
+   * App initialization
+12. Documentation (Phase 10)
+   * All documentation files
+13. Testing (Phase 11)
+   * Test structure
+________________
+
+
+Key Points for Cursor
+1. Add extensive comments everywhere, especially:
+   * Where design elements will be connected
+   * Where API data will be plugged in
+   * Complex business logic
+   * Reusable functions
+2. Use dummy data initially:
+   * Create sample car objects
+   * Sample user data
+   * Test with local data first
+3. Keep it modular:
+   * Each widget should be reusable
+   * Each function should have single responsibility
+   * Follow DRY principle
+4. Error handling:
+   * Try-catch blocks in all async operations
+   * User-friendly error messages
+   * Graceful fallbacks
+5. Loading states:
+   * Show shimmer/skeleton loaders
+   * Disable buttons during loading
+   * Provide visual feedback
+6. Responsive design considerations:
+   * Use MediaQuery for dynamic sizing
+   * Test on different screen sizes
+   * Use flexible widgets (Expanded, Flexible)
+7. Accessibility:
+   * Add semantic labels
+   * Ensure touch targets are adequate size
+   * Support screen readers
+8. Performance:
+   * Use const constructors where possible
+   * Implement lazy loading for lists
+   * Cache network images
+   * Dispose controllers properly
+9. Security:
+   * Never store sensitive data in shared_preferences
+   * Use flutter_secure_storage for tokens
+   * Validate all inputs
+   * Sanitize user data
+10. Code organization:
+   * One class per file
+   * Group related files in folders
+   * Follow consistent naming conventions
+   * Export files through barrel files where needed
+________________
+
+
+Post-Development Checklist
+* All pages created
+* All providers implemented
+* Navigation working between all pages
+* Dummy data displaying correctly
+* Theme toggle working
+* Guest mode functioning
+* Form validations working
+* Password visibility toggle working
+* All TODO comments added
+* Documentation completed
+* Code properly commented
+* Folder structure organized
+* Constants properly organized
+* Error handling implemented
+* Loading states added
+* Test structure created

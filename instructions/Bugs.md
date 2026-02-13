@@ -1,0 +1,1 @@
+By default theme is dark. But theme must be by default light. Sometimes theme must be something else, so the switch must detect that and work like that

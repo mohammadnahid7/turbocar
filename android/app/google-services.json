@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "123415469083",
+    "project_id": "turbocar-137af",
+    "storage_bucket": "turbocar-137af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123415469083:android:53301b1165b9a5bed36cbe",
+        "android_client_info": {
+          "package_name": "com.example.turbo_car"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSystzC0xa9cZvNdWHFa3eiBtUBtmfaTs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
